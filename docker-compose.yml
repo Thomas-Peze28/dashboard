@@ -3,9 +3,9 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./server
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: dashboard_server
+    container_name: dashboard_backend
     ports:
       - "8080:8080"
     environment:
@@ -16,14 +16,14 @@ services:
     depends_on:
       - db
     volumes:
-      - ./server:/app
+      - ./backend:/app
       - /app/node_modules
 
   frontend:
     build:
-      context: ./client
+      context: ./frontend
       dockerfile: Dockerfile
-    container_name: dashboard_client
+    container_name: dashboard_frontend
     ports:
       - "3000:3000"
     environment:
