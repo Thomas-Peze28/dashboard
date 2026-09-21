@@ -1,0 +1,47 @@
+# Fichiers sujets
+*.pdf
+
+# Dépendances
+node_modules/
+package-lock.json.bak
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Builds et sorties de compilation
+dist/
+build/
+*.tsbuildinfo
+out/
+.next/
+
+# Variables d'environnement et secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Fichiers système et éditeurs
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*~
+
+# Logs
+logs/
+*.log
+
+# Docker
+.docker/
+
+# Base de données locale / cache
+*.sqlite
+*.sqlite3
+*.db
+pgdata/
