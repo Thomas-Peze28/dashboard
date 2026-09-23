@@ -54,4 +54,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Test Docker Compose Build
-        run: docker compose build
+        run: |
+          if docker compose version > /dev/null 2>&1; then
+            docker compose build
+          elif command -v docker-compose > /dev/null 2>&1; then
+            docker-compose build
+          else
+            echo "Erreur : ni 'docker compose' ni 'docker-compose' n'est installé."
+            exit 1
+          fi
