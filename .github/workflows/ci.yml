@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" , "dev", "CI/CD" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main" , "dev" , "CI/CD" ]
 
 jobs:
   code-quality:
@@ -50,16 +50,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build Backend Image
+        run: docker build -t dashboard-backend ./backend
 
-      - name: Test Docker Compose Build
-        run: |
-          if docker compose version > /dev/null 2>&1; then
-            docker compose build
-          elif command -v docker-compose > /dev/null 2>&1; then
-            docker-compose build
-          else
-            echo "Erreur : ni 'docker compose' ni 'docker-compose' n'est installé."
-            exit 1
-          fi
+      - name: Build Frontend Image
+        run: docker build -t dashboard-frontend ./frontend
