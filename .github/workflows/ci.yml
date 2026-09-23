@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  code-quality:
+    name: Lint & Typecheck
+    runs-on: self-hosted
+
+    strategy:
+      matrix:
+        service: [backend, frontend]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.service }}/package-lock.json
+
+      - name: Install dependencies (${{ matrix.service }})
+        working-directory: ${{ matrix.service }}
+        run: npm ci
+
+      - name: Lint (${{ matrix.service }})
+        working-directory: ${{ matrix.service }}
+        run: npm run lint --if-present
+
+      - name: Typecheck TypeScript (${{ matrix.service }})
+        working-directory: ${{ matrix.service }}
+        run: npx tsc --noEmit
+
+      - name: Build (${{ matrix.service }})
+        working-directory: ${{ matrix.service }}
+        run: npm run build --if-present
+
+  docker-build:
+    name: Build Docker Images
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test Docker Compose Build
+        run: docker compose build
