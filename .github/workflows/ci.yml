@@ -30,6 +30,16 @@ jobs:
         working-directory: ${{ matrix.service }}
         run: npm ci
 
+      - name: Validate Prisma Schema (backend only)
+        if: matrix.service == 'backend'
+        working-directory: ${{ matrix.service }}
+        run: npx prisma validate
+
+      - name: Generate Prisma Client (backend only)
+        if: matrix.service == 'backend'
+        working-directory: ${{ matrix.service }}
+        run: npx prisma generate
+
       - name: Lint (${{ matrix.service }})
         working-directory: ${{ matrix.service }}
         run: npm run lint --if-present
