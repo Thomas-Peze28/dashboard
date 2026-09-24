@@ -34,11 +34,15 @@ jobs:
         if: matrix.service == 'backend'
         working-directory: ${{ matrix.service }}
         run: npx prisma validate
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/testdb"
 
       - name: Generate Prisma Client (backend only)
         if: matrix.service == 'backend'
         working-directory: ${{ matrix.service }}
         run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/testdb"
 
       - name: Lint (${{ matrix.service }})
         working-directory: ${{ matrix.service }}
