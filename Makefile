@@ -59,4 +59,9 @@ db-studio: ## Ouvre l'interface visuelle Prisma Studio (port 5555)
 db-reset: ## Réinitialise complètement la base (supprime toutes les données)
 	npm --prefix backend run db:reset
 
-.PHONY: help install dev up down build logs clean lint typecheck db-up db-down db-migrate db-generate db-studio db-reset
+dev: db-up ## Démarre Postgres via Docker puis le backend et frontend en parallèle
+	npx concurrently -k -p "[{name}]" -n "BACKEND,FRONTEND" -c "blue.bold,cyan.bold" \
+		"npm --prefix backend run dev" \
+		"npm --prefix frontend run dev"
+
+.PHONY: help install dev up down build logs clean lint typecheck db-up db-down db-migrate db-generate db-studio db-reset dev
