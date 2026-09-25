@@ -9,14 +9,19 @@ import { createUser, verifyUserEmail } from '../services/auth.service.js';
 **/
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, name } = req.body;
+        const { email, password, name } = req.body;
 
-        if (!email) {
-            res.status(400).json({ error: "Email is required." });
+        if (!email || !password) {
+            res.status(400).json({ error: "Email and password are required." });
             return;
         }
 
-        const newUser = await createUser(email, name);
+        if (password.length < 8) {
+            res.status(400).json({ error: "Password must be at least 8 characters long." });
+            return;
+        }
+
+        const newUser = await createUser(email, password, name);
 
         res.status(201).json({
             message: "Account created successfully. Please check your emails.",
@@ -51,7 +56,7 @@ export const confirmEmail = async (req: Request, res: Response): Promise<void> =
         await verifyUserEmail(token);
 
         res.status(200).json({ message: "Email confirmed successfully." });
-    
+
     } catch (error: any) {
         if (error.message === "INVALID_TOKEN") {
             res.status(400).json({ error: "Invalid token format." });
