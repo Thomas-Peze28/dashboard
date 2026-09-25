@@ -17,6 +17,9 @@
     "postinstall": "prisma skills sync || exit 0",
     "test": "vitest run"
   },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
