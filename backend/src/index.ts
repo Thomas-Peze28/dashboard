@@ -1,15 +1,7 @@
-import express from 'express';
 import type { Request, Response } from 'express';
-import cors from 'cors';
-import authRoutes from './routes/auth.routes.js';
-import userRoutes from './routes/user.routes.js';
+import { app } from './app.js';
 
-const app = express();
 const PORT = process.env.PORT || 8080;
-
-app.use(cors());
-app.use(express.json());
-app.set('trust proxy', true);
 
 // ABOUT ENDPOINT
 app.get('/about.json', (req: Request, res: Response) => {
@@ -32,9 +24,6 @@ app.get('/about.json', (req: Request, res: Response) => {
 app.get('/api/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
-
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
 
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Server start on http://0.0.0.0:${PORT}`);
