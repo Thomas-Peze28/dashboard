@@ -1,6 +1,11 @@
 import type { Request, Response } from 'express';
 import { AVAILABLE_SERVICES } from '../config/services.config.js';
 
+/** 
+ * Returns the about information in JSON format.
+ * @param req - The request object.
+ * @param res - The response object.
+ */
 export const getAboutJson = (req: Request, res: Response): void => {
 
     let clientIp = req.ip || req.socket.remoteAddress || '127.0.0.1';
