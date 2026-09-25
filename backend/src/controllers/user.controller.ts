@@ -17,8 +17,8 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
 
         const user = await getUserById(req.user.userId);
         res.status(200).json({ user });
-    } catch (error: any) {
-        if (error.message === 'USER_NOT_FOUND') {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === 'USER_NOT_FOUND') {
             res.status(404).json({ error: 'User not found.' });
             return;
         }

@@ -27,8 +27,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             message: "Account created successfully. Please check your emails.",
             user: { id: newUser.id, email: newUser.email, name: newUser.name }
         });
-    } catch (error: any) {
-        if (error.code === 'P2002') {
+    } catch (error: unknown) {
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
             res.status(409).json({ error: "This email is already in use." });
             return;
         }
@@ -57,8 +57,8 @@ export const confirmEmail = async (req: Request, res: Response): Promise<void> =
 
         res.status(200).json({ message: "Email confirmed successfully." });
 
-    } catch (error: any) {
-        if (error.message === "INVALID_TOKEN") {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "INVALID_TOKEN") {
             res.status(400).json({ error: "Invalid token format." });
             return;
         }
@@ -90,13 +90,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             token: authResult.token,
             user: authResult.user,
         });
-    } catch (error: any) {
-        if (error.message === 'INVALID_CREDENTIALS') {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === 'INVALID_CREDENTIALS') {
             res.status(401).json({ error: 'Invalid credentials.' });
             return;
         }
 
-        if (error.message === 'EMAIL_NOT_VERIFIED') {
+        if (error instanceof Error && error.message === 'EMAIL_NOT_VERIFIED') {
             res.status(403).json({ error: 'Please confirm your email before logging in.' });
             return;
         }
