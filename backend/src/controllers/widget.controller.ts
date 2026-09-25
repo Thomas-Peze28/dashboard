@@ -18,6 +18,11 @@ export const listUserWidgets = async (req: Request, res: Response): Promise<void
     }
 };
 
+/** 
+* Adds a new widget to the user's dashboard.
+* @param req - The request object.
+* @param res - The response object.
+**/
 export const addUserWidget = async (req: Request, res: Response): Promise<void> => {
 
     try {
@@ -49,6 +54,11 @@ export const addUserWidget = async (req: Request, res: Response): Promise<void> 
     }
 };
 
+/** 
+* Updates an existing widget on the user's dashboard.
+* @param req - The request object.
+* @param res - The response object.
+**/
 export const editUserWidget = async (req: Request, res: Response): Promise<void> => {
 
     try {
@@ -80,6 +90,11 @@ export const editUserWidget = async (req: Request, res: Response): Promise<void>
     }
 };
 
+/** 
+* Removes a widget from the user's dashboard.
+* @param req - The request object.
+* @param res - The response object.
+**/
 export const removeUserWidget = async (req: Request, res: Response): Promise<void> => {
 
     try {
