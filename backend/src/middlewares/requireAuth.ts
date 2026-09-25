@@ -30,7 +30,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
         const decoded = jwt.verify(token, JWT_SECRET) as unknown as TokenPayload;
         req.user = decoded;
         next();
-    } catch (error) {
+    } catch {
         res.status(401).json({ error: 'Access denied: token invalid or expired.' });
     }
 };
