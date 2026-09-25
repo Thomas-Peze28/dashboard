@@ -1,6 +1,7 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import cors from 'cors';
+import authRoutes from './routes/auth.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -30,6 +31,8 @@ app.get('/about.json', (req: Request, res: Response) => {
 app.get('/api/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
+
+app.use('/api/auth', authRoutes);
 
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Server start on http://0.0.0.0:${PORT}`);
