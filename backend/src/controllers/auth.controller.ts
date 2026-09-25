@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { createUser, verifyUserEmail } from '../services/auth.service.js';
+import { createUser, verifyUserEmail, loginUser } from '../services/auth.service.js';
 
 /**
 * Registers a new user by creating an account and sending a verification email.
@@ -9,7 +9,7 @@ import { createUser, verifyUserEmail } from '../services/auth.service.js';
 **/
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, password, name } = req.body;
+        const { email, password, name } = req.body ?? {};
 
         if (!email || !password) {
             res.status(400).json({ error: "Email and password are required." });
@@ -64,5 +64,44 @@ export const confirmEmail = async (req: Request, res: Response): Promise<void> =
         }
         console.error(error);
         res.status(500).json({ error: "Internal server error." });
+    }
+};
+
+/**
+* Logs in a user by verifying their credentials and generating a JWT.
+* @param req - The Express request object containing the user's email and password.
+* @param res - The Express response object used to send back the appropriate HTTP response.
+* @returns A promise that resolves to void.
+**/
+export const login = async (req: Request, res: Response): Promise<void> => {
+
+    try {
+        const { email, password } = req.body ?? {}; //
+
+        if (!email || !password) {
+            res.status(400).json({ error: "Email and password are required." });
+            return;
+        }
+
+        const authResult = await loginUser(email, password);
+
+        res.status(200).json({
+            message: 'Connexion réussie.',
+            token: authResult.token,
+            user: authResult.user,
+        });
+    } catch (error: any) {
+        if (error.message === 'INVALID_CREDENTIALS') {
+            res.status(401).json({ error: 'Invalid credentials.' });
+            return;
+        }
+
+        if (error.message === 'EMAIL_NOT_VERIFIED') {
+            res.status(403).json({ error: 'Please confirm your email before logging in.' });
+            return;
+        }
+
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error.' });
     }
 };
