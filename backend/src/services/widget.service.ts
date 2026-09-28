@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { Prisma } from '@prisma/client';
+import { executeWidgetHandler } from './widgets/index.js';
 
 /** 
 * Interface for creating a new user widget, including the widget ID, configuration, and optional position and size parameters.
@@ -134,4 +135,25 @@ export const deleteUserWidget = async (userId: string, userWidgetId: string) => 
     await prisma.userWidget.delete({
         where: { id: userWidgetId },
     });
+};
+
+/** 
+* Fetches the data for a user widget.
+* @param userId - The ID of the user who owns the widget.
+* @param userWidgetId - The ID of the user widget to fetch data for.
+* @returns A promise that resolves to the data for the user widget.
+**/
+export const fetchUserWidgetData = async (userId: string, userWidgetId: string) => {
+
+    const userWidget = await prisma.userWidget.findFirst({
+        where: { id: userWidgetId, userId },
+        include: { widget: true },
+    });
+
+    if (!userWidget) {
+        throw new Error('USER_WIDGET_NOT_FOUND');
+    }
+
+    const rawConfig = (userWidget.config as Record<string, unknown>) || {};
+    return executeWidgetHandler(userWidget.widget.name, rawConfig);
 };

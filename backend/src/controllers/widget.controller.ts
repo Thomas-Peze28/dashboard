@@ -117,3 +117,35 @@ export const removeUserWidget = async (req: Request, res: Response): Promise<voi
         res.status(500).json({ error: 'Error occurred while deleting the widget.' });
     }
 };
+
+/** 
+* Fetches the data of a specific widget.
+* @param req - The request object.
+* @param res - The response object.
+**/
+export const getWidgetData = async (req: Request, res: Response): Promise<void> => {
+
+    try {
+        const userId = req.user!.userId;
+        const { id } = req.params;
+
+        if (typeof id !== 'string') {
+            res.status(400).json({ error: 'Widget ID is required.' });
+            return;
+        }
+
+        const data = await widgetService.fetchUserWidgetData(userId, id);
+        res.status(200).json({ data });
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === 'USER_WIDGET_NOT_FOUND') {
+            res.status(404).json({ error: 'Widget not found.' });
+            return;
+        }
+        if (error instanceof Error && error.message === 'NOT_IMPLEMENTED') {
+            res.status(501).json({ error: 'Widget data not implemented.' });
+            return;
+        }
+        console.error(error);
+        res.status(500).json({ error: 'Error occurred while fetching widget data.' });
+    }
+};
