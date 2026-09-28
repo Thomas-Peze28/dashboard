@@ -100,17 +100,38 @@ describe('User Widgets API Integration Tests', () => {
         expect(res.body.widget.config).toEqual({ timezone: 'America/New_York' });
     });
 
+    it('GET /api/widgets/:id/data - devrait renvoyer l\'heure calculée', async () => {
+        const res = await request(app)
+            .get(`/api/widgets/${createdUserWidgetId}/data`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty('data');
+        expect(res.body.data).toHaveProperty('timezone');
+        expect(res.body.data).toHaveProperty('time');
+        expect(res.body.data).toHaveProperty('date');
+
+        // Vérifie le format de l'heure (HH:mm:ss)
+        expect(res.body.data.time).toMatch(/^\d{2}:\d{2}:\d{2}$/);
+    });
+
+    it('GET /api/widgets/:id/data - 404 si widget inexistant ou non possédé', async () => {
+        const fakeId = '00000000-0000-0000-0000-000000000000';
+        const res = await request(app)
+            .get(`/api/widgets/${fakeId}/data`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(404);
+    });
+
     it('DELETE /api/widgets/:id - devrait supprimer le widget', async () => {
         const res = await request(app)
             .delete(`/api/widgets/${createdUserWidgetId}`)
             .set('Authorization', `Bearer ${token}`);
-
         expect(res.status).toBe(204);
-
         const getRes = await request(app)
             .get('/api/widgets')
             .set('Authorization', `Bearer ${token}`);
-
         const exists = getRes.body.widgets.some((widget: { id: string }) => widget.id === createdUserWidgetId);
         expect(exists).toBe(false);
     });
