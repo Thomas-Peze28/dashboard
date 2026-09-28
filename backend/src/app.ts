@@ -7,8 +7,6 @@ import widgetRoutes from './routes/widget.routes.js';
 
 export const app = express();
 
-app.use(express.json());
-
 app.use(cors());
 app.use(express.json());
 app.set('trust proxy', true);
