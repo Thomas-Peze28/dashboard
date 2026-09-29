@@ -45,7 +45,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 **/
 export const confirmEmail = async (req: Request, res: Response): Promise<void> => {
 
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
     try {
+    
         const { token } = req.params;
 
         if (typeof token !== 'string') {
@@ -55,7 +58,7 @@ export const confirmEmail = async (req: Request, res: Response): Promise<void> =
 
         await verifyUserEmail(token);
 
-        res.status(200).json({ message: "Email confirmed successfully." });
+        res.redirect(`${frontendUrl}/login?verified=true`);
 
     } catch (error: unknown) {
         if (error instanceof Error && error.message === "INVALID_TOKEN") {
