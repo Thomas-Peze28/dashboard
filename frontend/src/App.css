@@ -1,1 +1,250 @@
 @import "tailwindcss";
+
+:root {
+  font-family: Inter, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #111827;
+  background: #f3f4f6;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  min-height: 100vh;
+}
+
+body {
+  min-height: 100vh;
+  background: #f3f4f6;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+}
+
+.glass-panel {
+  width: min(520px, 100%);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.login-card {
+  padding: 42px 38px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.card-header {
+  margin-bottom: 24px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  color: #374151;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.card-header h2 {
+  margin: 14px 0 0;
+  font-size: clamp(1.8rem, 2vw, 2.5rem);
+  color: #111827;
+  letter-spacing: -0.04em;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.input-field {
+  width: 100%;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 14px;
+  background: #f9fafb;
+  padding: 0.9rem 1rem;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.input-field::placeholder {
+  color: #6b7280;
+}
+
+.input-field:focus {
+  border-color: rgba(17, 24, 39, 0.3);
+  box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.06);
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #4b5563;
+  font-size: 0.84rem;
+}
+
+.remember-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-direction: row !important;
+}
+
+.remember-me input {
+  accent-color: #111827;
+}
+
+.form-row a,
+.register-link a {
+  color: #5a7dc9;
+  text-decoration: none;
+}
+
+.message {
+  margin: 0;
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  font-size: 0.87rem;
+}
+
+.message.error {
+  background: #fef2f2;
+  border: 1px solid rgba(127, 29, 29, 0.12);
+  color: #991b1b;
+}
+
+.message.success {
+  background: #f0fdf4;
+  border: 1px solid rgba(22, 163, 74, 0.12);
+  color: #166534;
+}
+
+.primary-button {
+  border: none;
+  border-radius: 14px;
+  padding: 0.95rem 1.2rem;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 12px 24px rgba(17, 24, 39, 0.12);
+}
+
+.primary-button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+  opacity: 0.85;
+  cursor: wait;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 12px;
+  color: #6b7280;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  display: block;
+  height: 1px;
+  background: rgba(17, 24, 39, 0.12);
+  flex: 1;
+}
+
+.social-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.social-button {
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 12px;
+  background: #f9fafb;
+  color: #111827;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.social-button:hover {
+  border-color: rgba(17, 24, 39, 0.2);
+  background: #f3f4f6;
+}
+
+.register-link {
+  margin-top: 22px;
+  text-align: center;
+  color: #4b5563;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 520px) {
+  .login-shell {
+    padding: 16px;
+  }
+
+  .login-card {
+    padding: 28px 24px 34px;
+  }
+
+  .form-row,
+  .social-actions {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+}
