@@ -78,9 +78,9 @@ describe('OAuth Google Integration Tests', () => {
       expect(user?.email).toBe(testEmail);
       expect(user?.isVerified).toBe(true);
       expect(user?.accounts).toHaveLength(1);
-      expect(user?.accounts[0].provider).toBe('google');
-      expect(user?.accounts[0].providerAccountId).toBe(googleSubId);
-      expect(user?.accounts[0].accessToken).toBe('fake_google_access_token');
+      expect(user?.accounts[0]?.provider).toBe('google');
+      expect(user?.accounts[0]?.providerAccountId).toBe(googleSubId);
+      expect(user?.accounts[0]?.accessToken).toBe('fake_google_access_token');
     });
 
     it('devrait lier le compte Google si l\'utilisateur existe déjà avec cet email', async () => {
@@ -128,8 +128,8 @@ describe('OAuth Google Integration Tests', () => {
       });
 
       expect(user?.accounts).toHaveLength(1);
-      expect(user?.accounts[0].provider).toBe('google');
-      expect(user?.accounts[0].providerAccountId).toBe(secondGoogleId);
+      expect(user?.accounts[0]?.provider).toBe('google');
+      expect(user?.accounts[0]?.providerAccountId).toBe(secondGoogleId);
 
       // Nettoyage de l'utilisateur créé
       await prisma.user.delete({ where: { email: existingEmail } });

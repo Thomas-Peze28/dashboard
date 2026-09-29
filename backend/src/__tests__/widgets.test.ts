@@ -4,11 +4,6 @@ import { app } from '../app.js';
 import { prisma } from '../lib/prisma.js';
 
 describe('User Widgets API Integration Tests', () => {
-    const testUser = {
-        email: `widget_test_${Date.now()}@epitech.eu`,
-        password: 'Password1234!',
-        name: 'Widget Tester',
-    };
 
     let token = '';
     let availableWidgetId = '';
