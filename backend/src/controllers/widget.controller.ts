@@ -27,7 +27,7 @@ export const addUserWidget = async (req: Request, res: Response): Promise<void> 
 
     try {
         const userId = req.user!.userId;
-        const { widgetId, config, positionX, positionY, width, height } = req.body;
+        const { widgetId, config, refreshInterval, positionX, positionY, width, height } = req.body;
 
         if (!widgetId || typeof config !== 'object' || config === null) {
             res.status(400).json({ error: 'widgetId and config are required.' });
@@ -37,6 +37,7 @@ export const addUserWidget = async (req: Request, res: Response): Promise<void> 
         const newWidget = await widgetService.createUserWidget(userId, {
             widgetId,
             config,
+            refreshInterval,
             positionX,
             positionY,
             width,

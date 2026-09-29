@@ -8,6 +8,7 @@ import { executeWidgetHandler } from './widgets/index.js';
 export interface CreateUserWidgetInput {
     widgetId: string;
     config: Record<string, unknown>;
+    refreshInterval?: number;
     positionX?: number;
     positionY?: number;
     width?: number;
@@ -19,6 +20,7 @@ export interface CreateUserWidgetInput {
 **/
 export interface UpdateUserWidgetInput {
     config?: Record<string, unknown>;
+    refreshInterval?: number;
     positionX?: number;
     positionY?: number;
     width?: number;
@@ -65,6 +67,7 @@ export const createUserWidget = async (userId: string, data: CreateUserWidgetInp
             userId,
             widgetId: data.widgetId,
             config: data.config as Prisma.InputJsonValue,
+            refreshInterval: data.refreshInterval ?? 30,
             positionX: data.positionX ?? 0,
             positionY: data.positionY ?? 0,
             width: data.width ?? 2,
@@ -101,6 +104,7 @@ export const updateUserWidget = async (userId: string, userWidgetId: string, dat
         where: { id: userWidgetId },
         data: {
             ...(data.config && { config: data.config as Prisma.InputJsonValue }),
+            ...(data.refreshInterval !== undefined && { refreshInterval: data.refreshInterval }),
             ...(data.positionX !== undefined && { positionX: data.positionX }),
             ...(data.positionY !== undefined && { positionY: data.positionY }),
             ...(data.width !== undefined && { width: data.width }),

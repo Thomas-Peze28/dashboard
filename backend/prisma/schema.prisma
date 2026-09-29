@@ -88,6 +88,7 @@ model UserWidget {
   userId    String   @map("user_id") @db.Uuid
   widgetId  String   @map("widget_id") @db.Uuid
   config    Json
+  refreshInterval Int      @default(30)
   positionX Int      @default(0) @map("position_x")
   positionY Int      @default(0) @map("position_y")
   width     Int      @default(2)
