@@ -1,0 +1,317 @@
+openapi: 3.0.3
+info:
+  title: Dashboard API
+  description: Documentation interactive de l'API RESTful du projet Dashboard.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Serveur de développement local
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [USER, ADMIN]
+        createdAt:
+          type: string
+          format: date-time
+
+    UserWidget:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        widgetId:
+          type: string
+          format: uuid
+        config:
+          type: object
+        positionX:
+          type: integer
+          default: 0
+        positionY:
+          type: integer
+          default: 0
+        width:
+          type: integer
+          default: 2
+        height:
+          type: integer
+          default: 2
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+paths:
+  /about.json:
+    get:
+      summary: Endpoint de spécification standard
+      tags: [System]
+      responses:
+        200:
+          description: Informations client et catalogue de services
+
+  /api/health:
+    get:
+      summary: Sonde de santé
+      tags: [System]
+      responses:
+        200:
+          description: API opérationnelle
+
+  /api/auth/register:
+    post:
+      summary: Inscription d'un utilisateur
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+      responses:
+        201:
+          description: Compte créé, e-mail de validation envoyé
+        400:
+          description: Paramètres manquants ou invalides
+        409:
+          description: E-mail déjà utilisé
+
+  /api/auth/confirm/{token}:
+    get:
+      summary: Confirmation de l'adresse e-mail
+      tags: [Auth]
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        302:
+          description: Redirection vers le frontend (/login?verified=true ou /login?error=invalid_token)
+
+  /api/auth/login:
+    post:
+      summary: Connexion locale
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        200:
+          description: Authentification réussie, retourne le JWT
+        401:
+          description: Identifiants invalides
+        403:
+          description: E-mail non vérifié
+
+  /api/auth/google:
+    get:
+      summary: Redirection vers le consentement OAuth Google
+      tags: [Auth - OAuth]
+      responses:
+        302:
+          description: Redirection vers accounts.google.com
+
+  /api/auth/github:
+    get:
+      summary: Redirection vers le consentement OAuth GitHub
+      tags: [Auth - OAuth]
+      responses:
+        302:
+          description: Redirection vers github.com/login/oauth/authorize
+
+  /api/users/me:
+    get:
+      summary: Récupérer le profil connecté
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Profil utilisateur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        401:
+          description: Non authentifié
+
+  /api/widgets:
+    get:
+      summary: Liste les widgets de l'utilisateur
+      tags: [Widgets]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Liste des widgets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  widgets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserWidget'
+    post:
+      summary: Ajouter un widget au dashboard
+      tags: [Widgets]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [widgetId, config]
+              properties:
+                widgetId:
+                  type: string
+                  format: uuid
+                config:
+                  type: object
+                positionX:
+                  type: integer
+                  default: 0
+                positionY:
+                  type: integer
+                  default: 0
+                width:
+                  type: integer
+                  default: 2
+                height:
+                  type: integer
+                  default: 2
+      responses:
+        201:
+          description: Widget créé
+        400:
+          description: Données invalides
+        404:
+          description: WidgetId introuvable
+
+  /api/widgets/{id}:
+    patch:
+      summary: Mettre à jour un widget
+      tags: [Widgets]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                config:
+                  type: object
+                positionX:
+                  type: integer
+                positionY:
+                  type: integer
+                width:
+                  type: integer
+                height:
+                  type: integer
+      responses:
+        200:
+          description: Widget mis à jour
+        404:
+          description: Widget introuvable
+    delete:
+      summary: Supprimer un widget
+      tags: [Widgets]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: Widget supprimé
+        404:
+          description: Widget introuvable
+
+  /api/widgets/{id}/data:
+    get:
+      summary: Obtenir les données fraîches du widget
+      tags: [Widgets]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Données calculées par le service
+        404:
+          description: Widget introuvable
+        501:
+          description: Handler de service non implémenté

@@ -6,6 +6,7 @@ import aboutRoutes from './routes/about.routes.js';
 import widgetRoutes from './routes/widget.routes.js';
 import oauthRoutes from './routes/oauth.routes.js';
 import serviceRoutes from './routes/service.routes.js';
+import docsRoutes from './routes/docs.routes.js';
 
 export const app = express();
 
@@ -21,3 +22,5 @@ app.use('/api/auth', oauthRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/widgets', widgetRoutes);
 app.use('/api/services', serviceRoutes);
+
+app.use('/api/docs', docsRoutes);
