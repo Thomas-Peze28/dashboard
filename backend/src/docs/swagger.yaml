@@ -1,11 +1,25 @@
 openapi: 3.0.3
 info:
   title: Dashboard API
-  description: Documentation interactive de l'API RESTful du projet Dashboard.
+  description: REST API for the Dashboard project.
   version: 1.0.0
 servers:
   - url: http://localhost:8080
-    description: Serveur de développement local
+    description: Local development server
+
+tags:
+  - name: System
+    description: Service discovery and health endpoints
+  - name: Authentication
+    description: Local account authentication and email verification
+  - name: OAuth
+    description: OAuth authentication redirects and callbacks
+  - name: Users
+    description: Authenticated user operations
+  - name: Services
+    description: Available services and widget definitions
+  - name: Widgets
+    description: Authenticated dashboard widget operations
 
 components:
   securitySchemes:
@@ -15,8 +29,16 @@ components:
       bearerFormat: JWT
 
   schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
     User:
       type: object
+      required: [id, email, role]
       properties:
         id:
           type: string
@@ -33,9 +55,99 @@ components:
         createdAt:
           type: string
           format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        isVerified:
+          type: boolean
+
+    AuthenticatedUser:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [USER, ADMIN]
+
+    WidgetParameter:
+      type: object
+      required: [name, type, description]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [string, integer, boolean, float]
+        description:
+          type: string
+
+    ServiceWidget:
+      type: object
+      required: [id, name, description, params]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/WidgetParameter'
+
+    Service:
+      type: object
+      required: [id, name, widgets]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        widgets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceWidget'
+
+    WidgetDefinition:
+      type: object
+      required: [id, serviceId, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        params:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/WidgetParameter'
 
     UserWidget:
       type: object
+      required: [id, userId, widgetId, config, positionX, positionY, width, height]
       properties:
         id:
           type: string
@@ -48,6 +160,7 @@ components:
           format: uuid
         config:
           type: object
+          additionalProperties: true
         positionX:
           type: integer
           default: 0
@@ -66,28 +179,82 @@ components:
         updatedAt:
           type: string
           format: date-time
+        widget:
+          $ref: '#/components/schemas/WidgetDefinition'
+
+    WidgetPosition:
+      type: object
+      properties:
+        positionX:
+          type: integer
+        positionY:
+          type: integer
+        width:
+          type: integer
+        height:
+          type: integer
 
 paths:
   /about.json:
     get:
-      summary: Endpoint de spécification standard
+      summary: Get API information and the service catalog
       tags: [System]
       responses:
-        200:
-          description: Informations client et catalogue de services
+        '200':
+          description: Client information and available services
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [client, server]
+                properties:
+                  client:
+                    type: object
+                    required: [host]
+                    properties:
+                      host:
+                        type: string
+                  server:
+                    type: object
+                    required: [current_time, services]
+                    properties:
+                      current_time:
+                        type: integer
+                        description: Current Unix timestamp in seconds
+                      services:
+                        type: array
+                        items:
+                          type: object
+                          required: [name, widgets]
+                          properties:
+                            name:
+                              type: string
+                            widgets:
+                              type: array
+                              items:
+                                $ref: '#/components/schemas/ServiceWidget'
 
   /api/health:
     get:
-      summary: Sonde de santé
+      summary: Check API health
       tags: [System]
       responses:
-        200:
-          description: API opérationnelle
+        '200':
+          description: API is operational
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    example: ok
 
   /api/auth/register:
     post:
-      summary: Inscription d'un utilisateur
-      tags: [Auth]
+      summary: Register a user
+      tags: [Authentication]
       requestBody:
         required: true
         content:
@@ -105,17 +272,37 @@ paths:
                 name:
                   type: string
       responses:
-        201:
-          description: Compte créé, e-mail de validation envoyé
-        400:
-          description: Paramètres manquants ou invalides
-        409:
-          description: E-mail déjà utilisé
+        '201':
+          description: Account created and verification email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, user]
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/AuthenticatedUser'
+        '400':
+          description: Missing fields or password shorter than eight characters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email address is already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
 
   /api/auth/confirm/{token}:
     get:
-      summary: Confirmation de l'adresse e-mail
-      tags: [Auth]
+      summary: Confirm a user's email address
+      tags: [Authentication]
       parameters:
         - name: token
           in: path
@@ -123,13 +310,25 @@ paths:
           schema:
             type: string
       responses:
-        302:
-          description: Redirection vers le frontend (/login?verified=true ou /login?error=invalid_token)
+        '302':
+          description: Redirects to the frontend login page with a success flag
+          headers:
+            Location:
+              schema:
+                type: string
+        '400':
+          description: Invalid verification token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
 
   /api/auth/login:
     post:
-      summary: Connexion locale
-      tags: [Auth]
+      summary: Log in with email and password
+      tags: [Authentication]
       requestBody:
         required: true
         content:
@@ -144,68 +343,172 @@ paths:
                 password:
                   type: string
       responses:
-        200:
-          description: Authentification réussie, retourne le JWT
-        401:
-          description: Identifiants invalides
-        403:
-          description: E-mail non vérifié
+        '200':
+          description: Authentication succeeded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, token, user]
+                properties:
+                  message:
+                    type: string
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/AuthenticatedUser'
+        '400':
+          description: Email or password is missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Email address has not been verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
 
   /api/auth/google:
     get:
-      summary: Redirection vers le consentement OAuth Google
-      tags: [Auth - OAuth]
+      summary: Redirect to Google OAuth authorization
+      tags: [OAuth]
       responses:
-        302:
-          description: Redirection vers accounts.google.com
+        '302':
+          description: Redirects to Google's authorization page
+
+  /api/auth/google/callback:
+    get:
+      summary: Handle the Google OAuth callback
+      tags: [OAuth]
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Authorization code returned by Google
+      responses:
+        '302':
+          description: Redirects to the frontend with a JWT or an OAuth error
 
   /api/auth/github:
     get:
-      summary: Redirection vers le consentement OAuth GitHub
-      tags: [Auth - OAuth]
+      summary: Redirect to GitHub OAuth authorization
+      tags: [OAuth]
       responses:
-        302:
-          description: Redirection vers github.com/login/oauth/authorize
+        '302':
+          description: Redirects to GitHub's authorization page
+
+  /api/auth/github/callback:
+    get:
+      summary: Handle the GitHub OAuth callback
+      tags: [OAuth]
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Authorization code returned by GitHub
+      responses:
+        '302':
+          description: Redirects to the frontend with a JWT or an OAuth error
 
   /api/users/me:
     get:
-      summary: Récupérer le profil connecté
+      summary: Get the authenticated user's profile
       tags: [Users]
       security:
         - BearerAuth: []
       responses:
-        200:
-          description: Profil utilisateur
+        '200':
+          description: Authenticated user profile
           content:
             application/json:
               schema:
                 type: object
+                required: [user]
                 properties:
                   user:
                     $ref: '#/components/schemas/User'
-        401:
-          description: Non authentifié
+        '401':
+          description: Authentication is required or the token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+  /api/services:
+    get:
+      summary: List available services and widget definitions
+      tags: [Services]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Available service catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [services]
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+        '401':
+          description: Authentication is required or the token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
 
   /api/widgets:
     get:
-      summary: Liste les widgets de l'utilisateur
+      summary: List the authenticated user's dashboard widgets
       tags: [Widgets]
       security:
         - BearerAuth: []
       responses:
-        200:
-          description: Liste des widgets
+        '200':
+          description: User dashboard widgets
           content:
             application/json:
               schema:
                 type: object
+                required: [widgets]
                 properties:
                   widgets:
                     type: array
                     items:
                       $ref: '#/components/schemas/UserWidget'
+        '401':
+          description: Authentication is required or the token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
     post:
-      summary: Ajouter un widget au dashboard
+      summary: Add a widget to the authenticated user's dashboard
       tags: [Widgets]
       security:
         - BearerAuth: []
@@ -222,6 +525,7 @@ paths:
                   format: uuid
                 config:
                   type: object
+                  additionalProperties: true
                 positionX:
                   type: integer
                   default: 0
@@ -235,16 +539,28 @@ paths:
                   type: integer
                   default: 2
       responses:
-        201:
-          description: Widget créé
-        400:
-          description: Données invalides
-        404:
-          description: WidgetId introuvable
+        '201':
+          description: Widget added
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [widget]
+                properties:
+                  widget:
+                    $ref: '#/components/schemas/UserWidget'
+        '400':
+          description: widgetId or config is missing or invalid
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget definition not found
+        '500':
+          description: Internal server error
 
   /api/widgets/{id}:
     patch:
-      summary: Mettre à jour un widget
+      summary: Update a dashboard widget
       tags: [Widgets]
       security:
         - BearerAuth: []
@@ -260,25 +576,34 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                config:
-                  type: object
-                positionX:
-                  type: integer
-                positionY:
-                  type: integer
-                width:
-                  type: integer
-                height:
-                  type: integer
+              allOf:
+                - $ref: '#/components/schemas/WidgetPosition'
+                - type: object
+                  properties:
+                    config:
+                      type: object
+                      additionalProperties: true
       responses:
-        200:
-          description: Widget mis à jour
-        404:
-          description: Widget introuvable
+        '200':
+          description: Widget updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [widget]
+                properties:
+                  widget:
+                    $ref: '#/components/schemas/UserWidget'
+        '400':
+          description: Widget ID is missing
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget not found for the authenticated user
+        '500':
+          description: Internal server error
     delete:
-      summary: Supprimer un widget
+      summary: Remove a widget from the dashboard
       tags: [Widgets]
       security:
         - BearerAuth: []
@@ -290,14 +615,20 @@ paths:
             type: string
             format: uuid
       responses:
-        204:
-          description: Widget supprimé
-        404:
-          description: Widget introuvable
+        '204':
+          description: Widget removed
+        '400':
+          description: Widget ID is missing
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget not found for the authenticated user
+        '500':
+          description: Internal server error
 
   /api/widgets/{id}/data:
     get:
-      summary: Obtenir les données fraîches du widget
+      summary: Fetch fresh data for a dashboard widget
       tags: [Widgets]
       security:
         - BearerAuth: []
@@ -309,9 +640,22 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
-          description: Données calculées par le service
-        404:
-          description: Widget introuvable
-        501:
-          description: Handler de service non implémenté
+        '200':
+          description: Data calculated by the widget service
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {}
+        '400':
+          description: Widget ID is missing
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget not found for the authenticated user
+        '501':
+          description: Widget data handler is not implemented
+        '500':
+          description: Internal server error
