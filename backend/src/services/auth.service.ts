@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma.js';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { sendVerificationEmail } from './mail.service.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 
@@ -27,6 +28,7 @@ export const createUser = async (email: string, password: string, name: string) 
     });
 
     console.log(`\n[DEV] Lien de confirmation pour ${email} :\nhttp://localhost:8080/api/auth/confirm/${token}\n`);
+    await sendVerificationEmail(user.email, token);
 
     return user;
 };
