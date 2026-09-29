@@ -15,22 +15,31 @@ describe('User Widgets API Integration Tests', () => {
     let createdUserWidgetId = '';
 
     beforeAll(async () => {
-        // 1. Récupérer un widget existant issu du seed
-        const widget = await prisma.widget.findFirst();
-        if (!widget) throw new Error('Lance le seed avant les tests.');
+        // 1. Récupérer ou créer un service et un widget pour le test
+        let widget = await prisma.widget.findFirst();
+
+        if (!widget) {
+            const service = await prisma.service.upsert({
+                where: { name: 'time' },
+                update: {},
+                create: {
+                    name: 'time',
+                    description: 'Time service for tests',
+                },
+            });
+
+            widget = await prisma.widget.create({
+                data: {
+                    serviceId: service.id,
+                    name: 'digital_clock',
+                    description: 'Digital clock test',
+                },
+            });
+        }
+
         availableWidgetId = widget.id;
 
-        // 2. Créer et valider un utilisateur
-        await prisma.user.create({
-            data: {
-                email: testUser.email,
-                password: 'hashed_dummy_password',
-                isVerified: true,
-            },
-        });
-        // Si le mot de passe n'est pas hashé via bcrypt dans le create direct,
-        // on utilise le token généré par requireAuth ou un login direct
-        // Pour simplifier l'obtention du token en test :
+        // 2. Création et validation de l'utilisateur de test
         const authRes = await request(app)
             .post('/api/auth/register')
             .send({ email: `auth_${Date.now()}@epitech.eu`, password: 'Password1234!' });
