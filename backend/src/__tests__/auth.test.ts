@@ -58,20 +58,35 @@ describe('Auth & User Integration Tests', () => {
   });
 
   describe('GET /api/auth/confirm/:token', () => {
-    it('should reject an invalid token with a 400 status', async () => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+    it('should return 400 on an invalid token without redirecting', async () => {
       const res = await request(app).get('/api/auth/confirm/invalid-token-1234');
+
       expect(res.status).toBe(400);
+      expect(res.headers.location).toBeUndefined();
+      expect(res.body).toEqual({ error: 'Invalid token format.' });
     });
 
-    it('should validate the account with a valid token', async () => {
+    it('should validate the account and redirect to /login?verified=true (302)', async () => {
       const res = await request(app).get(`/api/auth/confirm/${verificationToken}`);
-      expect(res.status).toBe(200);
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe(`${frontendUrl}/login?verified=true`);
 
       const user = await prisma.user.findUnique({
         where: { email: testUser.email },
       });
       expect(user?.isVerified).toBe(true);
       expect(user?.verificationToken).toBeNull();
+    });
+
+    it('should reject a re-used token without redirecting', async () => {
+      const res = await request(app).get(`/api/auth/confirm/${verificationToken}`);
+
+      expect(res.status).toBe(400);
+      expect(res.headers.location).toBeUndefined();
+      expect(res.body).toEqual({ error: 'Invalid token format.' });
     });
   });
 
