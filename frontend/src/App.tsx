@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { LogOut, Plus, X } from 'lucide-react'
 import liegeImage from './assets/liege.jpg'
 import pinImage from './assets/pin.png'
+import LoginPage from './components/LoginPage'
 import './App.css'
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
@@ -9,10 +10,26 @@ const gridColumns = 5
 const gridRows = 4
 
 type StickyNote = {
+  id: string
   row: number
   column: number
   columns: number
   rows: number
+}
+
+type ServiceCatalogResponse = {
+  services: Array<{ widgets: Array<{ id: string; name: string }> }>
+}
+
+type UserWidgetsResponse = {
+  widgets: Array<{
+    id: string
+    positionX: number
+    positionY: number
+    width: number
+    height: number
+    widget: { name: string }
+  }>
 }
 
 type GridPosition = {
@@ -31,52 +48,16 @@ const stickyNoteSizes: StickyNoteSize[] = [
   { columns: 3, rows: 2 },
 ]
 
-type AuthMode = 'login' | 'register'
-
 function App() {
   const isAuthenticated = Boolean(localStorage.getItem('dashboard_token'))
   const [stickyNotes, setStickyNotes] = useState<StickyNote[]>([])
+  const [stickyNoteWidgetId, setStickyNoteWidgetId] = useState<string | null>(null)
   const [pendingCell, setPendingCell] = useState<GridPosition | null>(null)
-  const [mode, setMode] = useState<AuthMode>('login')
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState(() =>
-    new URLSearchParams(window.location.search).has('error')
-      ? 'La connexion Google a échoué. Veuillez réessayer.'
-      : '',
-  )
-  const [success, setSuccess] = useState('')
+  const [isLoadingStickyNotes, setIsLoadingStickyNotes] = useState(true)
+  const [isSavingStickyNote, setIsSavingStickyNote] = useState(false)
+  const [dashboardError, setDashboardError] = useState('')
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const token = params.get('token')
-    const oauthError = params.has('error')
-
-    if (oauthError) {
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    if (token && !oauthError) {
-      localStorage.setItem('dashboard_token', token)
-      const user = params.get('user')
-
-      if (user) {
-        try {
-          localStorage.setItem('dashboard_user', decodeURIComponent(user))
-        } catch {
-          localStorage.setItem('dashboard_user', JSON.stringify({ email: 'google-user' }))
-        }
-      }
-
-      window.location.replace('/dashboard')
-      return
-    }
-
     if (isAuthenticated && window.location.pathname !== '/dashboard') {
       window.location.replace('/dashboard')
       return
@@ -84,6 +65,64 @@ function App() {
 
     if (!isAuthenticated && window.location.pathname === '/dashboard') {
       window.location.replace('/')
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!isAuthenticated || window.location.pathname !== '/dashboard') return
+
+    let isCancelled = false
+    const loadStickyNotes = async () => {
+      try {
+        const token = localStorage.getItem('dashboard_token')
+        if (!token) throw new Error('Session introuvable.')
+
+        const headers = { Authorization: `Bearer ${token}` }
+        const [servicesResponse, widgetsResponse] = await Promise.all([
+          fetch(`${apiBaseUrl}/api/services`, { headers }),
+          fetch(`${apiBaseUrl}/api/widgets`, { headers }),
+        ])
+
+        if (!servicesResponse.ok || !widgetsResponse.ok) {
+          throw new Error('Impossible de charger les post-it.')
+        }
+
+        const servicesData = (await servicesResponse.json()) as ServiceCatalogResponse
+        const widgetsData = (await widgetsResponse.json()) as UserWidgetsResponse
+        const noteDefinition = servicesData.services
+          .flatMap((service) => service.widgets)
+          .find((widget) => widget.name === 'sticky_note')
+
+        if (!noteDefinition) {
+          throw new Error('Le catalogue sticky_note est absent. Lancez make db-seed.')
+        }
+
+        if (isCancelled) return
+
+        setStickyNoteWidgetId(noteDefinition.id)
+        setStickyNotes(
+          widgetsData.widgets
+            .filter((widget) => widget.widget.name === 'sticky_note')
+            .map((widget) => ({
+              id: widget.id,
+              row: widget.positionY,
+              column: widget.positionX,
+              columns: widget.width,
+              rows: widget.height,
+            })),
+        )
+      } catch (error) {
+        if (!isCancelled) {
+          setDashboardError(error instanceof Error ? error.message : 'Impossible de charger les post-it.')
+        }
+      } finally {
+        if (!isCancelled) setIsLoadingStickyNotes(false)
+      }
+    }
+
+    void loadStickyNotes()
+    return () => {
+      isCancelled = true
     }
   }, [isAuthenticated])
 
@@ -97,99 +136,6 @@ function App() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [pendingCell])
-
-  const handleChange = (field: keyof typeof form, value: string) => {
-    setForm((current) => ({ ...current, [field]: value }))
-  }
-
-  const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError('')
-    setSuccess('')
-    setIsLoading(true)
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error ?? 'Identifiants incorrects.')
-      }
-
-      localStorage.setItem('dashboard_token', data.token)
-      localStorage.setItem('dashboard_user', JSON.stringify(data.user))
-      window.location.assign('/dashboard')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleRegisterSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError('')
-    setSuccess('')
-
-    if (!form.name.trim()) {
-      setError('Le nom est obligatoire.')
-      return
-    }
-
-    if (form.password !== form.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.')
-      return
-    }
-
-    if (form.password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères.')
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error ?? 'Une erreur est survenue lors de l’inscription.')
-      }
-
-      setSuccess('Compte créé avec succès. Vérifiez votre email puis connectez-vous.')
-      setMode('login')
-      setForm({ name: '', email: '', password: '', confirmPassword: '' })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleGoogleLogin = () => {
-    window.location.href = `${apiBaseUrl}/api/auth/google`
-  }
 
   const handleLogout = () => {
     localStorage.removeItem('dashboard_token')
@@ -211,23 +157,43 @@ function App() {
     )
   }
 
-  const addStickyNote = (size: StickyNoteSize) => {
-    if (!pendingCell || !canPlaceStickyNote(size)) return
+  const addStickyNote = async (size: StickyNoteSize) => {
+    if (!pendingCell || !stickyNoteWidgetId || !canPlaceStickyNote(size)) return
 
-    setStickyNotes((current) => [...current, { ...pendingCell, ...size }])
-    setPendingCell(null)
-  }
+    setIsSavingStickyNote(true)
+    setDashboardError('')
 
-  const switchToRegister = () => {
-    setError('')
-    setSuccess('')
-    setMode('register')
-  }
+    try {
+      const token = localStorage.getItem('dashboard_token')
+      const response = await fetch(`${apiBaseUrl}/api/widgets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          widgetId: stickyNoteWidgetId,
+          config: {},
+          positionX: pendingCell.column,
+          positionY: pendingCell.row,
+          width: size.columns,
+          height: size.rows,
+        }),
+      })
+      const data = (await response.json()) as { widget?: { id: string }; error?: string }
 
-  const switchToLogin = () => {
-    setError('')
-    setSuccess('')
-    setMode('login')
+      if (!response.ok || !data.widget) {
+        throw new Error(data.error ?? 'Impossible d’enregistrer le post-it.')
+      }
+
+      const createdWidget = data.widget
+      setStickyNotes((current) => [...current, { id: createdWidget.id, ...pendingCell, ...size }])
+      setPendingCell(null)
+    } catch (error) {
+      setDashboardError(error instanceof Error ? error.message : 'Impossible d’enregistrer le post-it.')
+    } finally {
+      setIsSavingStickyNote(false)
+    }
   }
 
   if (isAuthenticated && window.location.pathname === '/dashboard') {
@@ -252,8 +218,9 @@ function App() {
             <button
               type="button"
               onClick={() => setPendingCell({ row, column })}
+              disabled={isLoadingStickyNotes || !stickyNoteWidgetId}
               aria-label={`Ajouter un post-it, rangée ${row + 1}, colonne ${column + 1}`}
-              className="group/add flex h-full w-full items-center justify-center"
+              className="group/add flex h-full w-full items-center justify-center disabled:cursor-wait"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/35 text-white/90 opacity-65 shadow-sm transition hover:scale-110 hover:bg-black/55 hover:opacity-100 group-hover/add:opacity-100 group-focus-visible/add:opacity-100">
                 <Plus size={16} aria-hidden="true" />
@@ -276,7 +243,7 @@ function App() {
           {gridCells}
           {stickyNotes.map((note) => (
             <div
-              key={`${note.row}-${note.column}-${note.columns}-${note.rows}`}
+              key={note.id}
               style={{
                 gridColumn: `${note.column + 1} / span ${note.columns}`,
                 gridRow: `${note.row + 1} / span ${note.rows}`,
@@ -303,9 +270,17 @@ function App() {
         >
           <LogOut size={20} aria-hidden="true" />
           <span className="pointer-events-none absolute right-full top-1/2 mr-3 -translate-y-1/2 whitespace-nowrap rounded bg-gray-900 px-3 py-2 text-sm text-white opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-            deconnexion
+            Déconnexion
           </span>
         </button>
+        {dashboardError && (
+          <p
+            role="alert"
+            className="fixed bottom-4 left-4 z-40 max-w-[calc(100%-2rem)] rounded-md bg-white/95 px-4 py-3 text-sm text-red-800 shadow-lg"
+          >
+            {dashboardError}
+          </p>
+        )}
         {pendingCell && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
@@ -346,7 +321,7 @@ function App() {
                     <button
                       key={`${size.columns}-${size.rows}`}
                       type="button"
-                      disabled={!isAvailable}
+                      disabled={!isAvailable || isSavingStickyNote}
                       autoFocus={isAvailable && size.columns === 1 && size.rows === 1}
                       onClick={() => addStickyNote(size)}
                       aria-label={`${size.columns} par ${size.rows} cases${isAvailable ? '' : ', indisponible'}`}
@@ -373,7 +348,7 @@ function App() {
                         {size.columns} × {size.rows}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {isAvailable ? 'cases' : 'indisponible ici'}
+                        {!isAvailable ? 'indisponible ici' : isSavingStickyNote ? 'enregistrement...' : 'cases'}
                       </span>
                     </button>
                   )
@@ -386,176 +361,7 @@ function App() {
     )
   }
 
-  return (
-    <main className="login-shell">
-      <section className="glass-panel login-layout">
-        <div className="login-card">
-          <div className="card-header">
-            <span className="badge">{mode === 'login' ? 'Connexion' : 'Inscription'}</span>
-            <h2>{mode === 'login' ? 'Accédez à votre compte' : 'Créez votre compte'}</h2>
-          </div>
-
-          {mode === 'login' ? (
-            <form onSubmit={handleLoginSubmit} className="login-form">
-              <label>
-                <span>Email</span>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={(event) => handleChange('email', event.target.value)}
-                  placeholder="vous@exemple.com"
-                  autoComplete="email"
-                  className="input-field"
-                  required
-                />
-              </label>
-
-              <label>
-                <span>Mot de passe</span>
-                <input
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={(event) => handleChange('password', event.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  className="input-field"
-                  required
-                />
-              </label>
-
-              <div className="form-row">
-                <label className="remember-me">
-                  <input type="checkbox" />
-                  <span>Se souvenir de moi</span>
-                </label>
-                <a href="#">Mot de passe oublié ?</a>
-              </div>
-
-              {error && (
-                <p className="message error" role="alert">
-                  {error}
-                </p>
-              )}
-
-              {success && (
-                <p className="message success" role="status">
-                  {success}
-                </p>
-              )}
-
-              <button type="submit" className="primary-button" disabled={isLoading}>
-                {isLoading ? 'Connexion...' : 'Se connecter'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegisterSubmit} className="login-form">
-              <label>
-                <span>Nom complet</span>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={(event) => handleChange('name', event.target.value)}
-                  placeholder="Votre nom"
-                  autoComplete="name"
-                  className="input-field"
-                  required
-                />
-              </label>
-
-              <label>
-                <span>Email</span>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={(event) => handleChange('email', event.target.value)}
-                  placeholder="vous@exemple.com"
-                  autoComplete="email"
-                  className="input-field"
-                  required
-                />
-              </label>
-
-              <label>
-                <span>Mot de passe</span>
-                <input
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={(event) => handleChange('password', event.target.value)}
-                  placeholder="Au moins 8 caractères"
-                  autoComplete="new-password"
-                  className="input-field"
-                  required
-                />
-              </label>
-
-              <label>
-                <span>Confirmer le mot de passe</span>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={(event) => handleChange('confirmPassword', event.target.value)}
-                  placeholder="Répétez votre mot de passe"
-                  autoComplete="new-password"
-                  className="input-field"
-                  required
-                />
-              </label>
-
-              {error && (
-                <p className="message error" role="alert">
-                  {error}
-                </p>
-              )}
-
-              {success && (
-                <p className="message success" role="status">
-                  {success}
-                </p>
-              )}
-
-              <button type="submit" className="primary-button" disabled={isLoading}>
-                {isLoading ? 'Création...' : 'Créer mon compte'}
-              </button>
-            </form>
-          )}
-
-          <div className="divider">
-            <span>ou</span>
-          </div>
-
-          <div className="social-actions single-action">
-            <button type="button" className="social-button" onClick={handleGoogleLogin}>
-              Continuer avec Google
-            </button>
-          </div>
-
-          <p className="register-link">
-            {mode === 'login' ? (
-              <>
-                Vous n&apos;avez pas de compte ?{' '}
-                <button type="button" className="text-link-button" onClick={switchToRegister}>
-                  Créer un compte
-                </button>
-              </>
-            ) : (
-              <>
-                Vous avez déjà un compte ?{' '}
-                <button type="button" className="text-link-button" onClick={switchToLogin}>
-                  Se connecter
-                </button>
-              </>
-            )}
-          </p>
-        </div>
-      </section>
-    </main>
-  )
+  return <LoginPage />
 }
 
 export default App

@@ -45,4 +45,15 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
             },
         ],
     },
+    {
+        name: 'dashboard',
+        description: 'Built-in dashboard widgets.',
+        widgets: [
+            {
+                name: 'sticky_note',
+                description: 'A pinned note on the dashboard.',
+                params: [],
+            },
+        ],
+    },
 ];
