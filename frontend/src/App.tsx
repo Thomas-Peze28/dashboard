@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { LogOut } from 'lucide-react'
+import liegeImage from './assets/liege.jpg'
 import './App.css'
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
@@ -171,7 +172,10 @@ function App() {
 
   if (isAuthenticated && window.location.pathname === '/dashboard') {
     return (
-      <main className="relative min-h-screen bg-white">
+      <main
+        className="relative min-h-screen bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${liegeImage})` }}
+      >
         <button
           type="button"
           onClick={handleLogout}
