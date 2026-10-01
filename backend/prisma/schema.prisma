@@ -1,0 +1,103 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------
+// ENUMS
+// ----------------------------------------------------
+enum UserRole {
+  USER  @map("user")
+  ADMIN @map("admin")
+}
+
+// ----------------------------------------------------
+// MODELS (TABLES)
+// ----------------------------------------------------
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+
+  email     String   @unique @db.VarChar(255)
+  password  String?  @db.VarChar(255)
+
+  name      String?  @db.VarChar(255)
+  role      UserRole @default(USER)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  isVerified        Boolean  @default(false) @map("is_verified")
+  verificationToken String?  @unique @map("verification_token")
+
+  accounts    Account[]
+  userWidgets UserWidget[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(uuid()) @db.Uuid
+  userId            String  @map("user_id") @db.Uuid
+
+  provider          String  @db.VarChar(255)
+  providerAccountId String  @map("provider_account_id") @db.VarChar(255)
+
+  accessToken       String? @map("access_token") @db.Text
+  refreshToken      String? @map("refresh_token") @db.Text
+  expiresAt         Int?    @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Service {
+  id          String  @id @default(uuid()) @db.Uuid
+
+  name        String  @unique @db.VarChar(255)
+  description String? @db.Text
+
+  widgets Widget[]
+
+  @@map("services")
+}
+
+model Widget {
+  id          String  @id @default(uuid()) @db.Uuid
+  serviceId   String  @map("service_id") @db.Uuid
+
+  name        String  @db.VarChar(255)
+  description String? @db.Text
+  params      Json?
+
+  service     Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  userWidgets UserWidget[]
+
+  @@map("widgets")
+}
+
+model UserWidget {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  widgetId  String   @map("widget_id") @db.Uuid
+  config    Json
+  refreshInterval Int      @default(30)
+  positionX Int      @default(0) @map("position_x")
+  positionY Int      @default(0) @map("position_y")
+  width     Int      @default(2)
+  height    Int      @default(2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  widget Widget @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+
+  @@map("user_widgets")
+}

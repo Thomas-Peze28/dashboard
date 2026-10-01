@@ -47,10 +47,10 @@ db-up: ## Démarre uniquement le conteneur PostgreSQL
 db-down: ## Arrête le conteneur PostgreSQL
 	docker compose stop db
 
-db-migrate: ## Crée et applique une migration Prisma à partir du schéma
+db-migrate: ## Crée et applique une migration Prisma à partir du schéma (synchronise la base de données avec le schéma)
 	npm --prefix backend run db:migrate
 
-db-generate: ## Régénère le client TypeScript Prisma
+db-generate: ## Régénère le client TypeScript Prisma (permet d'utiliser la base de données dans le code)
 	npm --prefix backend run db:generate
 
 db-studio: ## Ouvre l'interface visuelle Prisma Studio (port 5555)

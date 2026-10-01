@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" , "dev", "CI/CD" ]
+    branches: ["main", "dev", "CI/CD"]
   pull_request:
-    branches: [ "main" , "dev" , "CI/CD" ]
+    branches: ["main", "dev", "CI/CD"]
 
 jobs:
   code-quality:
@@ -23,12 +23,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: ${{ matrix.service }}/package-lock.json
 
       - name: Install dependencies (${{ matrix.service }})
         working-directory: ${{ matrix.service }}
         run: npm ci
+
+      - name: Validate Prisma Schema (backend only)
+        if: matrix.service == 'backend'
+        working-directory: ${{ matrix.service }}
+        run: npx prisma validate
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/testdb"
+
+      - name: Generate Prisma Client (backend only)
+        if: matrix.service == 'backend'
+        working-directory: ${{ matrix.service }}
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/testdb"
 
       - name: Lint (${{ matrix.service }})
         working-directory: ${{ matrix.service }}
@@ -42,9 +56,66 @@ jobs:
         working-directory: ${{ matrix.service }}
         run: npm run build --if-present
 
+  backend-tests:
+    name: Backend Integration Tests
+    runs-on: self-hosted
+    needs: code-quality
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Start PostgreSQL test container
+        run: |
+          docker rm -f postgres-test-ci || true
+          docker run -d \
+            --name postgres-test-ci \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            -e POSTGRES_DB=dashboard_test \
+            -p 5433:5432 \
+            postgres:16-alpine
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until docker exec postgres-test-ci pg_isready -U postgres; do
+            sleep 1
+          done
+
+      - name: Deploy Prisma migrations to test DB
+        working-directory: ./backend
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5433/dashboard_test?schema=public"
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+
+      - name: Run Vitest
+        working-directory: ./backend
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5433/dashboard_test?schema=public"
+          JWT_SECRET: "ci_integration_test_secret"
+        run: npm test
+
+      - name: Stop PostgreSQL test container
+        if: always()
+        run: docker rm -f postgres-test-ci || true
+
   docker-build:
     name: Build Docker Images
     runs-on: self-hosted
+    needs: [code-quality, backend-tests]
 
     steps:
       - name: Checkout repository
