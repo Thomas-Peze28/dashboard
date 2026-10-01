@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LogOut, Plus, X } from 'lucide-react'
+import { LogOut, Plus, Trash2, X } from 'lucide-react'
 import liegeImage from './assets/liege.jpg'
 import pinImage from './assets/pin.png'
 import LoginPage from './components/LoginPage'
@@ -55,6 +55,7 @@ function App() {
   const [pendingCell, setPendingCell] = useState<GridPosition | null>(null)
   const [isLoadingStickyNotes, setIsLoadingStickyNotes] = useState(true)
   const [isSavingStickyNote, setIsSavingStickyNote] = useState(false)
+  const [deletingStickyNoteId, setDeletingStickyNoteId] = useState<string | null>(null)
   const [dashboardError, setDashboardError] = useState('')
 
   useEffect(() => {
@@ -196,6 +197,32 @@ function App() {
     }
   }
 
+  const deleteStickyNote = async (noteId: string) => {
+    setDeletingStickyNoteId(noteId)
+    setDashboardError('')
+
+    try {
+      const token = localStorage.getItem('dashboard_token')
+      if (!token) throw new Error('Session introuvable.')
+
+      const response = await fetch(`${apiBaseUrl}/api/widgets/${noteId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as { error?: string }
+        throw new Error(data.error ?? 'Impossible de supprimer le post-it.')
+      }
+
+      setStickyNotes((current) => current.filter((note) => note.id !== noteId))
+    } catch (error) {
+      setDashboardError(error instanceof Error ? error.message : 'Impossible de supprimer le post-it.')
+    } finally {
+      setDeletingStickyNoteId(null)
+    }
+  }
+
   if (isAuthenticated && window.location.pathname === '/dashboard') {
     const gridCells = Array.from({ length: gridRows * gridColumns }, (_, index) => {
       const row = Math.floor(index / gridColumns)
@@ -251,7 +278,7 @@ function App() {
                 height: '94%',
                 maxWidth: '94%',
               }}
-              className="relative z-10 rotate-[-1.5deg] self-center justify-self-center rounded-sm bg-yellow-300 shadow-[2px_5px_8px_rgba(45,30,10,0.38)]"
+              className="group/note relative z-10 rotate-[-1.5deg] self-center justify-self-center rounded-sm bg-yellow-300 shadow-[2px_5px_8px_rgba(45,30,10,0.38)]"
             >
               <img
                 src={pinImage}
@@ -259,6 +286,16 @@ function App() {
                 aria-hidden="true"
                 className="absolute left-1/2 top-0 z-10 h-8 w-8 -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-md"
               />
+              <button
+                type="button"
+                onClick={() => deleteStickyNote(note.id)}
+                disabled={deletingStickyNoteId === note.id}
+                aria-label="Supprimer le post-it"
+                title="Supprimer le post-it"
+                className="absolute right-1 top-1 z-20 inline-flex h-7 w-7 items-center justify-center rounded-sm bg-white/85 text-red-700 shadow-sm transition hover:bg-red-700 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:cursor-wait disabled:opacity-60"
+              >
+                <Trash2 size={14} aria-hidden="true" />
+              </button>
             </div>
           ))}
         </div>
