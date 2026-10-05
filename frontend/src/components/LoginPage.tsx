@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
+import { apiBaseUrl, setToken, setUser } from '../api/client'
 
 type AuthMode = 'login' | 'register'
 
@@ -31,14 +30,14 @@ function LoginPage() {
 
     if (!token || oauthError) return
 
-    localStorage.setItem('dashboard_token', token)
+    setToken(token)
     const user = params.get('user')
 
     if (user) {
       try {
-        localStorage.setItem('dashboard_user', decodeURIComponent(user))
+        setUser(decodeURIComponent(user))
       } catch {
-        localStorage.setItem('dashboard_user', JSON.stringify({ email: 'google-user' }))
+        setUser(JSON.stringify({ email: 'google-user' }))
       }
     }
 
@@ -65,8 +64,8 @@ function LoginPage() {
 
       if (!response.ok) throw new Error(data.error ?? 'Identifiants incorrects.')
 
-      localStorage.setItem('dashboard_token', data.token)
-      localStorage.setItem('dashboard_user', JSON.stringify(data.user))
+      setToken(data.token)
+      setUser(JSON.stringify(data.user))
       window.location.assign('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
