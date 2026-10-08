@@ -147,7 +147,7 @@ components:
 
     UserWidget:
       type: object
-      required: [id, userId, widgetId, config, positionX, positionY, width, height]
+      required: [id, userId, widgetId, config, refreshInterval, positionX, positionY, width, height]
       properties:
         id:
           type: string
@@ -161,6 +161,11 @@ components:
         config:
           type: object
           additionalProperties: true
+        refreshInterval:
+          type: integer
+          minimum: 5
+          default: 30
+          description: Refresh timer of the widget, in seconds
         positionX:
           type: integer
           default: 0
@@ -526,6 +531,11 @@ paths:
                 config:
                   type: object
                   additionalProperties: true
+                refreshInterval:
+                  type: integer
+                  minimum: 5
+                  default: 30
+                  description: Refresh timer of the widget, in seconds
                 positionX:
                   type: integer
                   default: 0
@@ -550,7 +560,7 @@ paths:
                   widget:
                     $ref: '#/components/schemas/UserWidget'
         '400':
-          description: widgetId or config is missing or invalid
+          description: widgetId or config is missing or invalid, or refreshInterval is not an integer >= 5
         '401':
           description: Authentication is required or the token is invalid
         '404':
@@ -583,6 +593,10 @@ paths:
                     config:
                       type: object
                       additionalProperties: true
+                    refreshInterval:
+                      type: integer
+                      minimum: 5
+                      description: Refresh timer of the widget, in seconds
       responses:
         '200':
           description: Widget updated
@@ -595,7 +609,7 @@ paths:
                   widget:
                     $ref: '#/components/schemas/UserWidget'
         '400':
-          description: Widget ID is missing
+          description: Widget ID is missing, or refreshInterval is not an integer >= 5
         '401':
           description: Authentication is required or the token is invalid
         '404':

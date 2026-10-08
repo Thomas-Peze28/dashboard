@@ -1,6 +1,17 @@
 import type { Request, Response } from 'express';
 import * as widgetService from '../services/widget.service.js';
 
+const MIN_REFRESH_INTERVAL = 5;
+
+/**
+* Checks that a refresh interval is either omitted or an integer of at least MIN_REFRESH_INTERVAL seconds.
+* @param value - The refresh interval received in the request body.
+* @returns True if the value is undefined or a valid interval.
+**/
+const isValidRefreshInterval = (value: unknown): boolean => {
+    return value === undefined || (Number.isInteger(value) && (value as number) >= MIN_REFRESH_INTERVAL);
+};
+
 /** 
 * Lists all widgets for a specific user.
 * @param req - The request object.
@@ -31,6 +42,11 @@ export const addUserWidget = async (req: Request, res: Response): Promise<void> 
 
         if (!widgetId || typeof config !== 'object' || config === null) {
             res.status(400).json({ error: 'widgetId and config are required.' });
+            return;
+        }
+
+        if (!isValidRefreshInterval(refreshInterval)) {
+            res.status(400).json({ error: `refreshInterval must be an integer >= ${MIN_REFRESH_INTERVAL} seconds.` });
             return;
         }
 
@@ -65,15 +81,21 @@ export const editUserWidget = async (req: Request, res: Response): Promise<void>
     try {
         const userId = req.user!.userId;
         const { id } = req.params;
-        const { config, positionX, positionY, width, height } = req.body;
+        const { config, refreshInterval, positionX, positionY, width, height } = req.body;
 
         if (typeof id !== 'string') {
             res.status(400).json({ error: 'Widget id is required.' });
             return;
         }
 
+        if (!isValidRefreshInterval(refreshInterval)) {
+            res.status(400).json({ error: `refreshInterval must be an integer >= ${MIN_REFRESH_INTERVAL} seconds.` });
+            return;
+        }
+
         const updated = await widgetService.updateUserWidget(userId, id, {
             config,
+            refreshInterval,
             positionX,
             positionY,
             width,

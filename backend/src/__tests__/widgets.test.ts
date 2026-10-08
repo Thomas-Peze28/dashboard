@@ -37,7 +37,7 @@ describe('User Widgets API Integration Tests', () => {
         // 2. Création et validation de l'utilisateur de test
         const authRes = await request(app)
             .post('/api/auth/register')
-            .send({ email: `auth_${Date.now()}@epitech.eu`, password: 'Password1234!' });
+            .send({ email: `widget_test_${Date.now()}@epitech.eu`, password: 'Password1234!' });
 
         await prisma.user.update({
             where: { id: authRes.body.user.id },
@@ -74,6 +74,7 @@ describe('User Widgets API Integration Tests', () => {
         expect(res.status).toBe(201);
         expect(res.body.widget).toHaveProperty('id');
         expect(res.body.widget.config).toEqual({ timezone: 'Europe/Paris' });
+        expect(res.body.widget.refreshInterval).toBe(30);
         createdUserWidgetId = res.body.widget.id;
     });
 
@@ -102,6 +103,53 @@ describe('User Widgets API Integration Tests', () => {
         expect(res.body.widget.positionX).toBe(3);
         expect(res.body.widget.positionY).toBe(2);
         expect(res.body.widget.config).toEqual({ timezone: 'America/New_York' });
+    });
+
+    it('PATCH /api/widgets/:id - devrait mettre à jour refreshInterval sans toucher la config', async () => {
+        const res = await request(app)
+            .patch(`/api/widgets/${createdUserWidgetId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ refreshInterval: 10 });
+
+        expect(res.status).toBe(200);
+        expect(res.body.widget.refreshInterval).toBe(10);
+        expect(res.body.widget.config).toEqual({ timezone: 'America/New_York' });
+    });
+
+    it.each([4, 0, -10, 2.5, '10', null])('PATCH /api/widgets/:id - 400 si refreshInterval vaut %j', async (refreshInterval) => {
+        const res = await request(app)
+            .patch(`/api/widgets/${createdUserWidgetId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ refreshInterval });
+
+        expect(res.status).toBe(400);
+    });
+
+    it('POST /api/widgets - devrait accepter un refreshInterval personnalisé', async () => {
+        const res = await request(app)
+            .post('/api/widgets')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                widgetId: availableWidgetId,
+                config: { timezone: 'Europe/Paris' },
+                refreshInterval: 5,
+            });
+
+        expect(res.status).toBe(201);
+        expect(res.body.widget.refreshInterval).toBe(5);
+    });
+
+    it.each([4, 2.5, '60'])('POST /api/widgets - 400 si refreshInterval vaut %j', async (refreshInterval) => {
+        const res = await request(app)
+            .post('/api/widgets')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                widgetId: availableWidgetId,
+                config: { timezone: 'Europe/Paris' },
+                refreshInterval,
+            });
+
+        expect(res.status).toBe(400);
     });
 
     it('GET /api/widgets/:id/data - devrait renvoyer l\'heure calculée', async () => {
