@@ -323,7 +323,7 @@ components:
           example: Japan
         days:
           type: array
-          description: One entry per day, from 1 to 7 days depending on the `days` parameter (default 5)
+          description: One entry per day, from 1 to 10 days depending on the `days` parameter (default 5)
           items:
             $ref: '#/components/schemas/WeatherForecastDay'
         units:
@@ -1105,7 +1105,7 @@ paths:
     get:
       summary: Daily weather forecast of a city
       description: |
-        Configuration (`config` of the UserWidget): `{ "city": "Tokyo", "days": 3 }` (Paris and 5 days by default, `days` clamped between 1 and 7)
+        Configuration (`config` of the UserWidget): `{ "city": "Tokyo", "days": 3 }` (Paris and 5 days by default, `days` clamped between 1 and 10)
       operationId: getWidgetData_weather_forecast
       tags: ['Widget - Weather']
       security:
