@@ -56,11 +56,20 @@ export const syncOAuthUserAndSignJwt = async (profile: OAuthUserProfile): Promis
     currentUserId = existingUser.id;
     currentUserRole = existingUser.role;
 
-    const hasAccount = existingUser.accounts.some(
+    const existingAccount = existingUser.accounts.find(
       (acc) => acc.provider === profile.provider && acc.providerAccountId === profile.providerAccountId
     );
 
-    if (!hasAccount) {
+    if (existingAccount) {
+      await prisma.account.update({
+        where: { id: existingAccount.id },
+        data: {
+          accessToken: profile.accessToken,
+          refreshToken: profile.refreshToken ?? existingAccount.refreshToken,
+          expiresAt,
+        },
+      });
+    } else {
       await prisma.account.create({
         data: {
           userId: existingUser.id,
