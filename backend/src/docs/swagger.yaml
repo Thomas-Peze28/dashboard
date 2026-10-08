@@ -28,6 +28,11 @@ tags:
     description: |
       Data returned by `GET /api/widgets/{id}/data` for the widgets of the **weather** service (Open-Meteo).
       The `#widget_name` suffix only identifies the widget in this documentation: it is not sent to the server.
+  - name: Widget - GitHub
+    description: |
+      Data returned by `GET /api/widgets/{id}/data` for the widgets of the **github** service.
+      These widgets call the GitHub API with the token of the user's linked GitHub account (sign in with GitHub first).
+      The `#widget_name` suffix only identifies the widget in this documentation: it is not sent to the server.
 
 components:
   securitySchemes:
@@ -331,6 +336,60 @@ components:
             precipitation:
               type: string
               example: mm
+
+    GithubRepoData:
+      type: object
+      required: [repository, description, url, owner, language, stars, forks, openIssues, watchers, isPrivate, defaultBranch, pushedAt]
+      properties:
+        repository:
+          type: string
+          example: facebook/react
+        description:
+          type: string
+          nullable: true
+          example: The library for web and native user interfaces.
+        url:
+          type: string
+          format: uri
+          example: https://github.com/facebook/react
+        owner:
+          type: object
+          required: [login, avatarUrl]
+          properties:
+            login:
+              type: string
+              example: facebook
+            avatarUrl:
+              type: string
+              format: uri
+              example: https://avatars.githubusercontent.com/u/69631?v=4
+        language:
+          type: string
+          nullable: true
+          example: JavaScript
+        stars:
+          type: integer
+          example: 232000
+        forks:
+          type: integer
+          example: 47500
+        openIssues:
+          type: integer
+          description: Open issues and pull requests (GitHub counts both)
+          example: 1020
+        watchers:
+          type: integer
+          example: 6600
+        isPrivate:
+          type: boolean
+          example: false
+        defaultBranch:
+          type: string
+          example: main
+        pushedAt:
+          type: string
+          format: date-time
+          example: '2026-10-08T09:12:44Z'
 
   parameters:
     UserWidgetId:
@@ -806,19 +865,26 @@ paths:
                 required: [data]
                 properties:
                   data:
-                    description: Depends on the widget type, see the "Widget - Clock" and "Widget - Weather" sections
+                    description: Depends on the widget type, see the "Widget - Clock", "Widget - Weather" and "Widget - GitHub" sections
                     oneOf:
                       - $ref: '#/components/schemas/ClockData'
                       - $ref: '#/components/schemas/WeatherCurrentData'
                       - $ref: '#/components/schemas/WeatherForecastData'
+                      - $ref: '#/components/schemas/GithubRepoData'
         '400':
-          description: Widget ID is missing, or the widget configuration is invalid (ex. city not found)
+          description: Widget ID is missing, or the widget configuration is invalid (ex. city or repository not found)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
           description: Authentication is required or the token is invalid
+        '403':
+          description: The widget needs a linked third-party account (ex. GitHub) that is missing, expired or revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Widget not found for the authenticated user
         '501':
@@ -971,3 +1037,65 @@ paths:
           description: Authentication is required or the token is invalid
         '404':
           description: Widget not found for the authenticated user
+
+  '/api/widgets/{id}/data#github_repo':
+    get:
+      summary: Statistics of a GitHub repository
+      description: |
+        Configuration (`config` of the UserWidget): `{ "repository": "facebook/react" }` (required, `owner/repo` format).
+        Requires a GitHub account linked to the user.
+      operationId: getWidgetData_github_repo
+      tags: ['Widget - GitHub']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GithubRepoData'
+        '400':
+          description: Invalid `repository` format, or repository not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidConfig:
+                  value:
+                    error: Invalid widget configuration.
+                notFound:
+                  value:
+                    error: GitHub resource not found.
+        '401':
+          description: Authentication is required or the token is invalid
+        '403':
+          description: No GitHub account linked, or the GitHub token is expired or revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notLinked:
+                  value:
+                    error: No GitHub account linked. Please sign in with GitHub.
+                tokenInvalid:
+                  value:
+                    error: GitHub token expired or revoked. Please sign in with GitHub again.
+        '404':
+          description: Widget not found for the authenticated user
+        '502':
+          description: GitHub is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: External service unavailable.
