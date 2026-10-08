@@ -45,4 +45,37 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
             },
         ],
     },
+    {
+        name: 'weather',
+        description: "Display weather conditions and forecasts with Open-Meteo.",
+        widgets: [
+            {
+                name: 'weather_current',
+                description: "Current weather conditions of a city.",
+                params: [
+                    {
+                        name: 'city',
+                        type: 'string',
+                        description: 'City name (ex: Lille, Paris, Tokyo)',
+                    },
+                ],
+            },
+            {
+                name: 'weather_forecast',
+                description: "Daily weather forecast of a city.",
+                params: [
+                    {
+                        name: 'city',
+                        type: 'string',
+                        description: 'City name (ex: Lille, Paris, Tokyo)',
+                    },
+                    {
+                        name: 'days',
+                        type: 'integer',
+                        description: 'Number of forecast days (1 to 7)',
+                    },
+                ],
+            },
+        ],
+    },
 ];

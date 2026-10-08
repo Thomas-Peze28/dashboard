@@ -168,6 +168,14 @@ export const getWidgetData = async (req: Request, res: Response): Promise<void> 
             res.status(501).json({ error: 'Widget data not implemented.' });
             return;
         }
+        if (error instanceof Error && error.message === 'CITY_NOT_FOUND') {
+            res.status(400).json({ error: 'City not found.' });
+            return;
+        }
+        if (error instanceof Error && error.message === 'UPSTREAM_ERROR') {
+            res.status(502).json({ error: 'External service unavailable.' });
+            return;
+        }
         console.error(error);
         res.status(500).json({ error: 'Error occurred while fetching widget data.' });
     }

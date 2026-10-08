@@ -1,4 +1,6 @@
 import { getClockData } from './time/clock.js';
+import { getCurrentWeather } from './weather/current.js';
+import { getWeatherForecast } from './weather/forecast.js';
 
 /**
 * Map of widget handlers.
@@ -7,6 +9,8 @@ const WIDGET_HANDLERS: Record<string, (config: Record<string, unknown>) => Promi
     clock: getClockData,
     digital_clock: getClockData,
     analog_clock: getClockData,
+    weather_current: getCurrentWeather,
+    weather_forecast: getWeatherForecast,
 };
 
 /**
