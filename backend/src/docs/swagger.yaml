@@ -391,6 +391,56 @@ components:
           format: date-time
           example: '2026-10-08T09:12:44Z'
 
+    GithubProfileData:
+      type: object
+      required: [login, name, type, avatarUrl, url, bio, company, location, publicRepos, followers, following, createdAt]
+      properties:
+        login:
+          type: string
+          example: torvalds
+        name:
+          type: string
+          nullable: true
+          example: Linus Torvalds
+        type:
+          type: string
+          description: Account type
+          enum: [User, Organization]
+          example: User
+        avatarUrl:
+          type: string
+          format: uri
+          example: https://avatars.githubusercontent.com/u/1024025?v=4
+        url:
+          type: string
+          format: uri
+          example: https://github.com/torvalds
+        bio:
+          type: string
+          nullable: true
+          example: null
+        company:
+          type: string
+          nullable: true
+          example: Linux Foundation
+        location:
+          type: string
+          nullable: true
+          example: Portland, OR
+        publicRepos:
+          type: integer
+          example: 8
+        followers:
+          type: integer
+          example: 240000
+        following:
+          type: integer
+          example: 0
+        createdAt:
+          type: string
+          format: date-time
+          example: '2011-09-03T15:26:22Z'
+
   parameters:
     UserWidgetId:
       name: id
@@ -871,6 +921,7 @@ paths:
                       - $ref: '#/components/schemas/WeatherCurrentData'
                       - $ref: '#/components/schemas/WeatherForecastData'
                       - $ref: '#/components/schemas/GithubRepoData'
+                      - $ref: '#/components/schemas/GithubProfileData'
         '400':
           description: Widget ID is missing, or the widget configuration is invalid (ex. city or repository not found)
           content:
@@ -1063,6 +1114,69 @@ paths:
                     $ref: '#/components/schemas/GithubRepoData'
         '400':
           description: Invalid `repository` format, or repository not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidConfig:
+                  value:
+                    error: Invalid widget configuration.
+                notFound:
+                  value:
+                    error: GitHub resource not found.
+        '401':
+          description: Authentication is required or the token is invalid
+        '403':
+          description: No GitHub account linked, or the GitHub token is expired or revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notLinked:
+                  value:
+                    error: No GitHub account linked. Please sign in with GitHub.
+                tokenInvalid:
+                  value:
+                    error: GitHub token expired or revoked. Please sign in with GitHub again.
+        '404':
+          description: Widget not found for the authenticated user
+        '502':
+          description: GitHub is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: External service unavailable.
+
+  '/api/widgets/{id}/data#github_profile':
+    get:
+      summary: Public information of a GitHub user or organization
+      description: |
+        Configuration (`config` of the UserWidget): `{ "username": "torvalds" }`.
+        If `username` is missing or empty, the profile of the user's linked GitHub account is returned.
+        Requires a GitHub account linked to the user.
+      operationId: getWidgetData_github_profile
+      tags: ['Widget - GitHub']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GithubProfileData'
+        '400':
+          description: Invalid `username`, or GitHub user not found
           content:
             application/json:
               schema:
