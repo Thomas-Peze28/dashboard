@@ -93,6 +93,17 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
                     },
                 ],
             },
+            {
+                name: 'github_profile',
+                description: "Public information of a GitHub user or organization.",
+                params: [
+                    {
+                        name: 'username',
+                        type: 'string',
+                        description: 'GitHub username (ex: Steve Jobs). Leave empty to display your own profile',
+                    },
+                ],
+            },
         ],
     },
 ];

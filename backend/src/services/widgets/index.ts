@@ -2,6 +2,7 @@ import { getClockData } from './time/clock.js';
 import { getCurrentWeather } from './weather/current.js';
 import { getWeatherForecast } from './weather/forecast.js';
 import { getGithubRepo } from './github/repo.js';
+import { getGithubProfile } from './github/profile.js';
 
 /**
 * A widget handler receives the widget configuration and the ID of the user who owns it.
@@ -18,6 +19,7 @@ const WIDGET_HANDLERS: Record<string, WidgetHandler> = {
     weather_current: getCurrentWeather,
     weather_forecast: getWeatherForecast,
     github_repo: getGithubRepo,
+    github_profile: getGithubProfile,
 };
 
 /**

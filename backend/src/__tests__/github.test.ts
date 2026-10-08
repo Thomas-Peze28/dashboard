@@ -20,6 +20,21 @@ const REPO_REACT = {
     owner: { login: 'facebook', avatar_url: 'https://avatars.githubusercontent.com/u/69631?v=4' },
 };
 
+const PROFILE_TORVALDS = {
+    login: 'torvalds',
+    name: 'Linus Torvalds',
+    type: 'User',
+    avatar_url: 'https://avatars.githubusercontent.com/u/1024025?v=4',
+    html_url: 'https://github.com/torvalds',
+    bio: null,
+    company: 'Linux Foundation',
+    location: 'Portland, OR',
+    public_repos: 8,
+    followers: 240000,
+    following: 0,
+    created_at: '2011-09-03T15:26:22Z',
+};
+
 /**
 * Stubs global fetch with a single GitHub API response.
 **/
@@ -51,6 +66,7 @@ describe('GitHub widgets Integration Tests', () => {
     let token = '';
     let userId = '';
     let repoWidgetId = '';
+    let profileWidgetId = '';
 
     /**
     * Points the github_repo widget to another repository.
@@ -64,8 +80,21 @@ describe('GitHub widgets Integration Tests', () => {
         .get(`/api/widgets/${repoWidgetId}/data`)
         .set('Authorization', `Bearer ${token}`);
 
+    /**
+    * Points the github_profile widget to another username.
+    **/
+    const setUsername = (username: unknown) => request(app)
+        .patch(`/api/widgets/${profileWidgetId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { username } });
+
+    const getProfileData = () => request(app)
+        .get(`/api/widgets/${profileWidgetId}/data`)
+        .set('Authorization', `Bearer ${token}`);
+
     beforeAll(async () => {
         const repoWidget = await ensureGithubWidget('github_repo');
+        const profileWidget = await ensureGithubWidget('github_profile');
 
         const authRes = await request(app)
             .post('/api/auth/register')
@@ -96,6 +125,12 @@ describe('GitHub widgets Integration Tests', () => {
             .set('Authorization', `Bearer ${token}`)
             .send({ widgetId: repoWidget.id, config: { repository: 'facebook/react' } });
         repoWidgetId = widgetRes.body.widget.id;
+
+        const profileRes = await request(app)
+            .post('/api/widgets')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ widgetId: profileWidget.id, config: { username: 'torvalds' } });
+        profileWidgetId = profileRes.body.widget.id;
     });
 
     afterEach(() => {
@@ -177,6 +212,70 @@ describe('GitHub widgets Integration Tests', () => {
 
             expect(res.status).toBe(502);
         });
+    });
+
+    describe('github_profile', () => {
+
+        it('devrait renvoyer le profil demandé', async () => {
+            await setUsername('torvalds');
+            const fetchMock = mockGithub(PROFILE_TORVALDS);
+
+            const res = await getProfileData();
+
+            expect(res.status).toBe(200);
+            expect(res.body.data).toEqual({
+                login: 'torvalds',
+                name: 'Linus Torvalds',
+                type: 'User',
+                avatarUrl: 'https://avatars.githubusercontent.com/u/1024025?v=4',
+                url: 'https://github.com/torvalds',
+                bio: null,
+                company: 'Linux Foundation',
+                location: 'Portland, OR',
+                publicRepos: 8,
+                followers: 240000,
+                following: 0,
+                createdAt: '2011-09-03T15:26:22Z',
+            });
+
+            const [url] = fetchMock.mock.calls[0] as unknown as [string];
+            expect(url).toBe('https://api.github.com/users/torvalds');
+        });
+
+        it.each(['', '   ', undefined])('devrait renvoyer le profil de l\'utilisateur connecté si username vaut %j', async (username) => {
+            await setUsername(username);
+            const fetchMock = mockGithub(PROFILE_TORVALDS);
+
+            const res = await getProfileData();
+
+            expect(res.status).toBe(200);
+            const [url] = fetchMock.mock.calls[0] as unknown as [string];
+            expect(url).toBe('https://api.github.com/user');
+        });
+
+        it.each(['-torvalds', 'tor valds', 'torvalds/linux', 42])('400 si username vaut %j', async (username) => {
+            await setUsername(username);
+            const fetchMock = mockGithub(PROFILE_TORVALDS);
+
+            const res = await getProfileData();
+
+            expect(res.status).toBe(400);
+            expect(res.body.error).toBe('Invalid widget configuration.');
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('400 si l\'utilisateur GitHub n\'existe pas', async () => {
+            await setUsername('this-user-does-not-exist-42');
+            mockGithub({ message: 'Not Found' }, 404);
+
+            const res = await getProfileData();
+
+            expect(res.status).toBe(400);
+            expect(res.body.error).toBe('GitHub resource not found.');
+        });
+    });
+
+    describe('compte GitHub non lié', () => {
 
         it('403 si l\'utilisateur n\'a pas lié de compte GitHub', async () => {
             await prisma.account.deleteMany({ where: { userId, provider: 'github' } });
