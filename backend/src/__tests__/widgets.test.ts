@@ -11,7 +11,7 @@ describe('User Widgets API Integration Tests', () => {
 
     beforeAll(async () => {
         // 1. Récupérer ou créer un service et un widget pour le test
-        let widget = await prisma.widget.findFirst();
+        let widget = await prisma.widget.findFirst({ where: { name: 'digital_clock' } });
 
         if (!widget) {
             const service = await prisma.service.upsert({

@@ -20,6 +20,14 @@ tags:
     description: Available services and widget definitions
   - name: Widgets
     description: Authenticated dashboard widget operations
+  - name: Widget - Clock
+    description: |
+      Data returned by `GET /api/widgets/{id}/data` for the widgets of the **time** service.
+      The `#widget_name` suffix only identifies the widget in this documentation: it is not sent to the server.
+  - name: Widget - Weather
+    description: |
+      Data returned by `GET /api/widgets/{id}/data` for the widgets of the **weather** service (Open-Meteo).
+      The `#widget_name` suffix only identifies the widget in this documentation: it is not sent to the server.
 
 components:
   securitySchemes:
@@ -198,6 +206,141 @@ components:
           type: integer
         height:
           type: integer
+
+    ClockData:
+      type: object
+      required: [timezone, time, date]
+      properties:
+        timezone:
+          type: string
+          description: IANA timezone used for the computation (UTC if not configured)
+          example: Europe/Paris
+        time:
+          type: string
+          description: Current time, HH:mm:ss (24h)
+          example: '11:42:07'
+        date:
+          type: string
+          description: Current date, long French format
+          example: jeudi 8 octobre 2026
+
+    WeatherCurrentData:
+      type: object
+      required: [city, country, time, temperature, apparentTemperature, humidity, windSpeed, weatherCode, description, isDay, units]
+      properties:
+        city:
+          type: string
+          example: Lille
+        country:
+          type: string
+          nullable: true
+          example: France
+        time:
+          type: string
+          description: Local time of the measurement (Open-Meteo updates it every 15 minutes)
+          example: '2026-10-08T11:30'
+        temperature:
+          type: number
+          example: 12.9
+        apparentTemperature:
+          type: number
+          example: 10.5
+        humidity:
+          type: number
+          example: 83
+        windSpeed:
+          type: number
+          example: 16.2
+        weatherCode:
+          type: integer
+          description: WMO weather interpretation code
+          example: 51
+        description:
+          type: string
+          description: Readable label of the WMO code
+          example: Light drizzle
+        isDay:
+          type: boolean
+          example: true
+        units:
+          type: object
+          required: [temperature, humidity, windSpeed]
+          properties:
+            temperature:
+              type: string
+              example: °C
+            humidity:
+              type: string
+              example: '%'
+            windSpeed:
+              type: string
+              example: km/h
+
+    WeatherForecastDay:
+      type: object
+      required: [date, weatherCode, description, temperatureMax, temperatureMin, precipitation]
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-10-09'
+        weatherCode:
+          type: integer
+          nullable: true
+          description: WMO weather interpretation code
+          example: 61
+        description:
+          type: string
+          example: Slight rain
+        temperatureMax:
+          type: number
+          nullable: true
+          example: 13.4
+        temperatureMin:
+          type: number
+          nullable: true
+          example: 8.7
+        precipitation:
+          type: number
+          nullable: true
+          example: 6.4
+
+    WeatherForecastData:
+      type: object
+      required: [city, country, days, units]
+      properties:
+        city:
+          type: string
+          example: Tokyo
+        country:
+          type: string
+          nullable: true
+          example: Japan
+        days:
+          type: array
+          description: One entry per day, from 1 to 7 days depending on the `days` parameter (default 5)
+          items:
+            $ref: '#/components/schemas/WeatherForecastDay'
+        units:
+          type: object
+          required: [temperature, precipitation]
+          properties:
+            temperature:
+              type: string
+              example: °C
+            precipitation:
+              type: string
+              example: mm
+
+  parameters:
+    UserWidgetId:
+      name: id
+      in: path
+      required: true
+      description: ID of the widget on the user's dashboard (UserWidget)
+      schema:
+        type: string
+        format: uuid
 
 paths:
   /about.json:
@@ -662,14 +805,169 @@ paths:
                 type: object
                 required: [data]
                 properties:
-                  data: {}
+                  data:
+                    description: Depends on the widget type, see the "Widget - Clock" and "Widget - Weather" sections
+                    oneOf:
+                      - $ref: '#/components/schemas/ClockData'
+                      - $ref: '#/components/schemas/WeatherCurrentData'
+                      - $ref: '#/components/schemas/WeatherForecastData'
         '400':
-          description: Widget ID is missing
+          description: Widget ID is missing, or the widget configuration is invalid (ex. city not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           description: Authentication is required or the token is invalid
         '404':
           description: Widget not found for the authenticated user
         '501':
           description: Widget data handler is not implemented
+        '502':
+          description: The external API used by the widget (ex. Open-Meteo) is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           description: Internal server error
+
+  '/api/widgets/{id}/data#digital_clock':
+    get:
+      summary: Digital clock data
+      description: |
+        Configuration (`config` of the UserWidget): `{ "timezone": "Europe/Paris" }` (IANA timezone, UTC by default)
+      operationId: getWidgetData_digital_clock
+      tags: ['Widget - Clock']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ClockData'
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget not found for the authenticated user
+
+  '/api/widgets/{id}/data#analog_clock':
+    get:
+      summary: Analog clock data
+      description: |
+        Configuration (`config` of the UserWidget): `{ "timezone": "Europe/Paris" }` (IANA timezone, UTC by default)
+      operationId: getWidgetData_analog_clock
+      tags: ['Widget - Clock']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ClockData'
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget not found for the authenticated user
+
+  '/api/widgets/{id}/data#weather_current':
+    get:
+      summary: Current weather of a city
+      description: |
+        Configuration (`config` of the UserWidget): `{ "city": "Lille" }` (Paris by default)
+      operationId: getWidgetData_weather_current
+      tags: ['Widget - Weather']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WeatherCurrentData'
+        '400':
+          description: City not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: City not found.
+        '502':
+          description: Open-Meteo is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: External service unavailable.
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget not found for the authenticated user
+
+  '/api/widgets/{id}/data#weather_forecast':
+    get:
+      summary: Daily weather forecast of a city
+      description: |
+        Configuration (`config` of the UserWidget): `{ "city": "Tokyo", "days": 3 }` (Paris and 5 days by default, `days` clamped between 1 and 7)
+      operationId: getWidgetData_weather_forecast
+      tags: ['Widget - Weather']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WeatherForecastData'
+        '400':
+          description: City not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: City not found.
+        '502':
+          description: Open-Meteo is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: External service unavailable.
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget not found for the authenticated user
