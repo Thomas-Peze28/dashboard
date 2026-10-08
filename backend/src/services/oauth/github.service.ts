@@ -15,7 +15,7 @@ export const getGithubAuthUrl = (): string => {
   const options = {
     client_id: GITHUB_CLIENT_ID,
     redirect_uri: GITHUB_REDIRECT_URI,
-    scope: 'read:user user:email',
+    scope: 'read:user user:email repo',
   };
 
   return `${rootUrl}?${new URLSearchParams(options).toString()}`;
