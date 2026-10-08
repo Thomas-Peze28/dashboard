@@ -74,6 +74,10 @@ describe('User Widgets API Integration Tests', () => {
         expect(res.status).toBe(201);
         expect(res.body.widget).toHaveProperty('id');
         expect(res.body.widget.config).toEqual({ timezone: 'Europe/Paris' });
+        expect(res.body.widget.positionX).toBe(0);
+        expect(res.body.widget.positionY).toBe(0);
+        expect(res.body.widget.width).toBe(2);
+        expect(res.body.widget.height).toBe(2);
         expect(res.body.widget.refreshInterval).toBe(30);
         createdUserWidgetId = res.body.widget.id;
     });

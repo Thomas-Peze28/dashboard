@@ -64,4 +64,7 @@ dev: db-up ## Démarre Postgres via Docker puis le backend et frontend en parall
 		"npm --prefix backend run dev" \
 		"npm --prefix frontend run dev"
 
+.PHONY: help install dev up down build logs clean lint typecheck db-up db-down db-migrate db-generate db-studio db-reset db-seed
+db-seed: ## Initialise le catalogue des services et widgets en base
+	npm --prefix backend run db:seed
 .PHONY: help install dev up down build logs clean lint typecheck db-up db-down db-migrate db-generate db-studio db-reset dev
