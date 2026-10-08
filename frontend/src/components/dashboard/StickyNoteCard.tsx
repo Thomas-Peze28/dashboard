@@ -4,6 +4,7 @@ import pinImage from '../../assets/pin.png'
 import { gridColumns, gridRows } from '../../constants/grid'
 import type { GridPosition, StickyNote } from '../../types/stickyNote'
 import ClockContent from './clock/ClockContent'
+import WeatherContent from './weather/WeatherContent'
 
 type StickyNoteCardProps = {
   note: StickyNote
@@ -131,8 +132,17 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit }: StickyN
           draggable={false}
           className="absolute left-1/2 top-0 z-10 h-8 w-8 -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-md"
         />
-        {note.content.kind === 'clock' && (
+        {note.content.kind === 'clock' ? (
           <ClockContent timezone={note.content.timezone} columns={note.columns} rows={note.rows} />
+        ) : (
+          // La clé force un rechargement des données quand la ville ou le nombre de jours change.
+          <WeatherContent
+            key={JSON.stringify(note.content)}
+            noteId={note.id}
+            content={note.content}
+            columns={note.columns}
+            rows={note.rows}
+          />
         )}
       </div>
     </>

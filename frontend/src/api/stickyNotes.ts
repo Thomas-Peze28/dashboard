@@ -1,4 +1,5 @@
 import { isValidTimezone } from '../constants/timezones'
+import { clampForecastDays, defaultCity, defaultForecastDays } from '../constants/weather'
 import type {
   GridPosition,
   StickyNote,
@@ -9,8 +10,9 @@ import type {
 import { apiBaseUrl, authHeaders } from './client'
 
 const catalogNames: Record<StickyNoteContentKind, string> = {
-  empty: 'sticky_note',
   clock: 'digital_clock',
+  weatherCurrent: 'weather_current',
+  weatherForecast: 'weather_forecast',
 }
 
 export type StickyNoteWidgetIds = Record<StickyNoteContentKind, string>
@@ -32,16 +34,46 @@ type UserWidgetsResponse = {
 }
 
 function toContent(widgetName: string, config: Record<string, unknown> | null): StickyNoteContent | null {
-  if (widgetName === catalogNames.empty) return { kind: 'empty' }
   if (widgetName === catalogNames.clock) {
     return { kind: 'clock', timezone: isValidTimezone(config?.timezone) ? config.timezone : 'UTC' }
+  }
+
+  const city = typeof config?.city === 'string' && config.city.trim() !== '' ? config.city.trim() : defaultCity
+
+  if (widgetName === catalogNames.weatherCurrent) return { kind: 'weatherCurrent', city }
+  if (widgetName === catalogNames.weatherForecast) {
+    const days = Number(config?.days)
+
+    return {
+      kind: 'weatherForecast',
+      city,
+      days: Number.isInteger(days) ? clampForecastDays(days) : defaultForecastDays,
+    }
   }
 
   return null
 }
 
 function toConfig(content: StickyNoteContent) {
-  return content.kind === 'clock' ? { timezone: content.timezone } : {}
+  switch (content.kind) {
+    case 'clock':
+      return { timezone: content.timezone }
+    case 'weatherCurrent':
+      return { city: content.city }
+    case 'weatherForecast':
+      return { city: content.city, days: content.days }
+  }
+}
+
+// Les identifiants du catalogue sont chargés une seule fois : on vérifie qu'ils couvrent bien le widget demandé.
+function getWidgetId(widgetIds: StickyNoteWidgetIds, content: StickyNoteContent) {
+  const widgetId = widgetIds[content.kind] as string | undefined
+
+  if (!widgetId) {
+    throw new Error('Ce widget est absent du catalogue chargé. Rechargez la page.')
+  }
+
+  return widgetId
 }
 
 export async function fetchStickyNotes(): Promise<{ widgetIds: StickyNoteWidgetIds; notes: StickyNote[] }> {
@@ -70,8 +102,9 @@ export async function fetchStickyNotes(): Promise<{ widgetIds: StickyNoteWidgetI
 
   return {
     widgetIds: {
-      empty: findWidgetId(catalogNames.empty),
       clock: findWidgetId(catalogNames.clock),
+      weatherCurrent: findWidgetId(catalogNames.weatherCurrent),
+      weatherForecast: findWidgetId(catalogNames.weatherForecast),
     },
     notes: widgetsData.widgets.flatMap((widget) => {
       const content = toContent(widget.widget.name, widget.config)
@@ -104,7 +137,7 @@ export async function createStickyNote(
       ...authHeaders(),
     },
     body: JSON.stringify({
-      widgetId: widgetIds[content.kind],
+      widgetId: getWidgetId(widgetIds, content),
       config: toConfig(content),
       positionX: position.column,
       positionY: position.row,
@@ -160,7 +193,7 @@ export async function changeStickyNoteContent(
 ): Promise<void> {
   await patchStickyNote(
     noteId,
-    { widgetId: widgetIds[content.kind], config: toConfig(content) },
+    { widgetId: getWidgetId(widgetIds, content), config: toConfig(content) },
     'Impossible de modifier le post-it.',
   )
 }
@@ -175,4 +208,16 @@ export async function removeStickyNote(noteId: string): Promise<void> {
     const data = (await response.json().catch(() => ({}))) as { error?: string }
     throw new Error(data.error ?? 'Impossible de supprimer le post-it.')
   }
+}
+
+// Données calculées par le backend pour un widget (météo, etc.).
+export async function fetchStickyNoteData<T>(noteId: string): Promise<T> {
+  const response = await fetch(`${apiBaseUrl}/api/widgets/${noteId}/data`, { headers: authHeaders() })
+  const body = (await response.json().catch(() => ({}))) as { data?: T; error?: string }
+
+  if (!response.ok || body.data === undefined) {
+    throw new Error(body.error ?? 'Impossible de charger les données du widget.')
+  }
+
+  return body.data
 }

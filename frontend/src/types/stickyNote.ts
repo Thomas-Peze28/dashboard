@@ -8,7 +8,10 @@ export type StickyNoteSize = {
   rows: number
 }
 
-export type StickyNoteContent = { kind: 'empty' } | { kind: 'clock'; timezone: string }
+export type StickyNoteContent =
+  | { kind: 'clock'; timezone: string }
+  | { kind: 'weatherCurrent'; city: string }
+  | { kind: 'weatherForecast'; city: string; days: number }
 
 export type StickyNoteContentKind = StickyNoteContent['kind']
 

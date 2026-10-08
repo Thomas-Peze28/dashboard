@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Clock, StickyNote as StickyNoteIcon, X } from 'lucide-react'
+import { ArrowLeft, Clock, CloudSun, X } from 'lucide-react'
 import { localTimezone } from '../../constants/timezones'
-import type { StickyNoteContent, StickyNoteContentKind } from '../../types/stickyNote'
+import { defaultForecastDays, getMaxForecastDays } from '../../constants/weather'
+import type { StickyNoteContent, StickyNoteSize } from '../../types/stickyNote'
 import TimezonePicker from './clock/TimezonePicker'
+import WeatherOptions, { type WeatherMode } from './weather/WeatherOptions'
 
 type StickyNoteContentDialogProps = {
+  size: StickyNoteSize
   initialContent?: StickyNoteContent
   backLabel: string
   submitLabel: string
@@ -14,12 +17,15 @@ type StickyNoteContentDialogProps = {
   onClose: () => void
 }
 
-const contentChoices: Array<{ kind: StickyNoteContentKind; label: string; icon: typeof Clock }> = [
-  { kind: 'empty', label: 'Vide', icon: StickyNoteIcon },
-  { kind: 'clock', label: 'Horloge', icon: Clock },
+type WidgetChoice = 'clock' | 'weather'
+
+const widgetChoices: Array<{ widget: WidgetChoice; label: string; icon: typeof Clock }> = [
+  { widget: 'clock', label: 'Horloge', icon: Clock },
+  { widget: 'weather', label: 'Météo', icon: CloudSun },
 ]
 
 function StickyNoteContentDialog({
+  size,
   initialContent,
   backLabel,
   submitLabel,
@@ -28,10 +34,23 @@ function StickyNoteContentDialog({
   onBack,
   onClose,
 }: StickyNoteContentDialogProps) {
-  const [kind, setKind] = useState<StickyNoteContentKind>(initialContent?.kind ?? 'empty')
+  const maxDays = getMaxForecastDays(size)
+  const [widget, setWidget] = useState<WidgetChoice>(
+    !initialContent || initialContent.kind === 'clock' ? 'clock' : 'weather',
+  )
   const [timezone, setTimezone] = useState(
     initialContent?.kind === 'clock' ? initialContent.timezone : localTimezone,
   )
+  const [weatherMode, setWeatherMode] = useState<WeatherMode>(
+    initialContent?.kind === 'weatherForecast' ? 'forecast' : 'current',
+  )
+  const [city, setCity] = useState(
+    initialContent && initialContent.kind !== 'clock' ? initialContent.city : '',
+  )
+  const [days, setDays] = useState(
+    Math.min(initialContent?.kind === 'weatherForecast' ? initialContent.days : defaultForecastDays, maxDays),
+  )
+  const canSubmit = !isSaving && (widget === 'clock' || city.trim() !== '')
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -43,7 +62,11 @@ function StickyNoteContentDialog({
   }, [onClose])
 
   const handleSubmit = () => {
-    onSelect(kind === 'clock' ? { kind, timezone } : { kind })
+    if (!canSubmit) return
+
+    if (widget === 'clock') onSelect({ kind: 'clock', timezone })
+    else if (weatherMode === 'current') onSelect({ kind: 'weatherCurrent', city: city.trim() })
+    else onSelect({ kind: 'weatherForecast', city: city.trim(), days })
   }
 
   return (
@@ -79,16 +102,16 @@ function StickyNoteContentDialog({
         </header>
 
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          {contentChoices.map((choice) => {
+          {widgetChoices.map((choice) => {
             const Icon = choice.icon
-            const isSelected = choice.kind === kind
+            const isSelected = choice.widget === widget
 
             return (
               <button
-                key={choice.kind}
+                key={choice.widget}
                 type="button"
                 aria-pressed={isSelected}
-                onClick={() => setKind(choice.kind)}
+                onClick={() => setWidget(choice.widget)}
                 className={`flex min-w-0 flex-col items-center gap-2 rounded-md border p-3 text-gray-800 transition hover:border-yellow-500 hover:bg-yellow-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 ${
                   isSelected ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200'
                 }`}
@@ -100,7 +123,20 @@ function StickyNoteContentDialog({
           })}
         </div>
 
-        {kind === 'clock' && <TimezonePicker value={timezone} onChange={setTimezone} />}
+        {widget === 'clock' ? (
+          <TimezonePicker value={timezone} onChange={setTimezone} />
+        ) : (
+          <WeatherOptions
+            mode={weatherMode}
+            city={city}
+            days={days}
+            maxDays={maxDays}
+            onModeChange={setWeatherMode}
+            onCityChange={setCity}
+            onDaysChange={setDays}
+            onSubmit={handleSubmit}
+          />
+        )}
 
         <footer className="mt-6 flex items-center justify-between gap-3">
           <button
@@ -115,8 +151,8 @@ function StickyNoteContentDialog({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={isSaving}
-            className="rounded-md bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-yellow-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 disabled:cursor-wait disabled:opacity-60"
+            disabled={!canSubmit}
+            className="rounded-md bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-yellow-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 disabled:opacity-60"
           >
             {isSaving ? 'Enregistrement...' : submitLabel}
           </button>

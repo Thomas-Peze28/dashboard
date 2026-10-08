@@ -2,7 +2,7 @@ import { fetchForecast, geocodeCity, getCityFromConfig } from './openMeteo.js';
 import { describeWeatherCode } from './weatherCodes.js';
 
 const DEFAULT_DAYS = 5;
-const MAX_DAYS = 7;
+const MAX_DAYS = 10;
 
 /**
 * The response from the Open-Meteo forecast API.

@@ -104,6 +104,7 @@ function Dashboard() {
       )}
       {pendingCell && pendingSize && (
         <StickyNoteContentDialog
+          size={pendingSize}
           backLabel="Taille"
           submitLabel="Ajouter"
           isSaving={isSavingStickyNote}
@@ -137,6 +138,7 @@ function Dashboard() {
       )}
       {editedNote && editState?.step === 'content' && (
         <StickyNoteContentDialog
+          size={editedNote}
           initialContent={editedNote.content}
           backLabel="Retour"
           submitLabel="Enregistrer"
