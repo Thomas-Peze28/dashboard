@@ -8,4 +8,8 @@ export type StickyNoteSize = {
   rows: number
 }
 
-export type StickyNote = GridPosition & StickyNoteSize & { id: string }
+export type StickyNoteContent = { kind: 'empty' } | { kind: 'clock'; timezone: string }
+
+export type StickyNoteContentKind = StickyNoteContent['kind']
+
+export type StickyNote = GridPosition & StickyNoteSize & { id: string; content: StickyNoteContent }

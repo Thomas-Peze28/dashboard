@@ -1,6 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import pinImage from '../../assets/pin.png'
 import type { StickyNote } from '../../types/stickyNote'
+import ClockContent from './clock/ClockContent'
 
 type StickyNoteCardProps = {
   note: StickyNote
@@ -36,6 +37,9 @@ function StickyNoteCard({ note, isDeleting, onDelete }: StickyNoteCardProps) {
       >
         <Trash2 size={14} aria-hidden="true" />
       </button>
+      {note.content.kind === 'clock' && (
+        <ClockContent timezone={note.content.timezone} columns={note.columns} rows={note.rows} />
+      )}
     </div>
   )
 }

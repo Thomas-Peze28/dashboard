@@ -6,12 +6,11 @@ import type { StickyNoteSize } from '../../types/stickyNote'
 
 type StickyNoteSizeDialogProps = {
   canPlace: (size: StickyNoteSize) => boolean
-  isSaving: boolean
   onSelect: (size: StickyNoteSize) => void
   onClose: () => void
 }
 
-function StickyNoteSizeDialog({ canPlace, isSaving, onSelect, onClose }: StickyNoteSizeDialogProps) {
+function StickyNoteSizeDialog({ canPlace, onSelect, onClose }: StickyNoteSizeDialogProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
@@ -61,7 +60,7 @@ function StickyNoteSizeDialog({ canPlace, isSaving, onSelect, onClose }: StickyN
               <button
                 key={`${size.columns}-${size.rows}`}
                 type="button"
-                disabled={!isAvailable || isSaving}
+                disabled={!isAvailable}
                 autoFocus={isAvailable && size.columns === 1 && size.rows === 1}
                 onClick={() => onSelect(size)}
                 aria-label={`${size.columns} par ${size.rows} cases${isAvailable ? '' : ', indisponible'}`}
@@ -88,7 +87,7 @@ function StickyNoteSizeDialog({ canPlace, isSaving, onSelect, onClose }: StickyN
                   {size.columns} × {size.rows}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {!isAvailable ? 'indisponible ici' : isSaving ? 'enregistrement...' : 'cases'}
+                  {isAvailable ? 'cases' : 'indisponible ici'}
                 </span>
               </button>
             )

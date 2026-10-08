@@ -1,5 +1,19 @@
-import type { GridPosition, StickyNote, StickyNoteSize } from '../types/stickyNote'
+import { isValidTimezone } from '../constants/timezones'
+import type {
+  GridPosition,
+  StickyNote,
+  StickyNoteContent,
+  StickyNoteContentKind,
+  StickyNoteSize,
+} from '../types/stickyNote'
 import { apiBaseUrl, authHeaders } from './client'
+
+const catalogNames: Record<StickyNoteContentKind, string> = {
+  empty: 'sticky_note',
+  clock: 'digital_clock',
+}
+
+export type StickyNoteWidgetIds = Record<StickyNoteContentKind, string>
 
 type ServiceCatalogResponse = {
   services: Array<{ widgets: Array<{ id: string; name: string }> }>
@@ -12,11 +26,25 @@ type UserWidgetsResponse = {
     positionY: number
     width: number
     height: number
+    config: Record<string, unknown> | null
     widget: { name: string }
   }>
 }
 
-export async function fetchStickyNotes(): Promise<{ widgetId: string; notes: StickyNote[] }> {
+function toContent(widgetName: string, config: Record<string, unknown> | null): StickyNoteContent | null {
+  if (widgetName === catalogNames.empty) return { kind: 'empty' }
+  if (widgetName === catalogNames.clock) {
+    return { kind: 'clock', timezone: isValidTimezone(config?.timezone) ? config.timezone : 'UTC' }
+  }
+
+  return null
+}
+
+function toConfig(content: StickyNoteContent) {
+  return content.kind === 'clock' ? { timezone: content.timezone } : {}
+}
+
+export async function fetchStickyNotes(): Promise<{ widgetIds: StickyNoteWidgetIds; notes: StickyNote[] }> {
   const headers = authHeaders()
   const [servicesResponse, widgetsResponse] = await Promise.all([
     fetch(`${apiBaseUrl}/api/services`, { headers }),
@@ -29,32 +57,45 @@ export async function fetchStickyNotes(): Promise<{ widgetId: string; notes: Sti
 
   const servicesData = (await servicesResponse.json()) as ServiceCatalogResponse
   const widgetsData = (await widgetsResponse.json()) as UserWidgetsResponse
-  const noteDefinition = servicesData.services
-    .flatMap((service) => service.widgets)
-    .find((widget) => widget.name === 'sticky_note')
+  const catalog = servicesData.services.flatMap((service) => service.widgets)
+  const findWidgetId = (name: string) => {
+    const definition = catalog.find((widget) => widget.name === name)
 
-  if (!noteDefinition) {
-    throw new Error('Le catalogue sticky_note est absent. Lancez make db-seed.')
+    if (!definition) {
+      throw new Error(`Le catalogue ${name} est absent. Lancez make db-seed.`)
+    }
+
+    return definition.id
   }
 
   return {
-    widgetId: noteDefinition.id,
-    notes: widgetsData.widgets
-      .filter((widget) => widget.widget.name === 'sticky_note')
-      .map((widget) => ({
-        id: widget.id,
-        row: widget.positionY,
-        column: widget.positionX,
-        columns: widget.width,
-        rows: widget.height,
-      })),
+    widgetIds: {
+      empty: findWidgetId(catalogNames.empty),
+      clock: findWidgetId(catalogNames.clock),
+    },
+    notes: widgetsData.widgets.flatMap((widget) => {
+      const content = toContent(widget.widget.name, widget.config)
+      if (!content) return []
+
+      return [
+        {
+          id: widget.id,
+          row: widget.positionY,
+          column: widget.positionX,
+          columns: widget.width,
+          rows: widget.height,
+          content,
+        },
+      ]
+    }),
   }
 }
 
 export async function createStickyNote(
-  widgetId: string,
+  widgetIds: StickyNoteWidgetIds,
   position: GridPosition,
   size: StickyNoteSize,
+  content: StickyNoteContent,
 ): Promise<StickyNote> {
   const response = await fetch(`${apiBaseUrl}/api/widgets`, {
     method: 'POST',
@@ -63,8 +104,8 @@ export async function createStickyNote(
       ...authHeaders(),
     },
     body: JSON.stringify({
-      widgetId,
-      config: {},
+      widgetId: widgetIds[content.kind],
+      config: toConfig(content),
       positionX: position.column,
       positionY: position.row,
       width: size.columns,
@@ -77,7 +118,7 @@ export async function createStickyNote(
     throw new Error(data.error ?? 'Impossible d’enregistrer le post-it.')
   }
 
-  return { id: data.widget.id, ...position, ...size }
+  return { id: data.widget.id, ...position, ...size, content }
 }
 
 export async function removeStickyNote(noteId: string): Promise<void> {

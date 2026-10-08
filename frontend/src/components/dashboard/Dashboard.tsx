@@ -2,14 +2,16 @@ import { useState } from 'react'
 import liegeImage from '../../assets/liege.jpg'
 import { gridColumns, gridRows } from '../../constants/grid'
 import { useStickyNotes } from '../../hooks/useStickyNotes'
-import type { GridPosition, StickyNoteSize } from '../../types/stickyNote'
+import type { GridPosition, StickyNoteContent, StickyNoteSize } from '../../types/stickyNote'
 import GridCell from './GridCell'
 import LogoutButton from './LogoutButton'
 import StickyNoteCard from './StickyNoteCard'
+import StickyNoteContentDialog from './StickyNoteContentDialog'
 import StickyNoteSizeDialog from './StickyNoteSizeDialog'
 
 function Dashboard() {
   const [pendingCell, setPendingCell] = useState<GridPosition | null>(null)
+  const [pendingSize, setPendingSize] = useState<StickyNoteSize | null>(null)
   const {
     stickyNotes,
     canAddStickyNote,
@@ -22,9 +24,14 @@ function Dashboard() {
     deleteStickyNote,
   } = useStickyNotes()
 
-  const handleSelectSize = async (size: StickyNoteSize) => {
-    if (!pendingCell) return
-    if (await addStickyNote(pendingCell, size)) setPendingCell(null)
+  const closeDialog = () => {
+    setPendingCell(null)
+    setPendingSize(null)
+  }
+
+  const handleSelectContent = async (content: StickyNoteContent) => {
+    if (!pendingCell || !pendingSize) return
+    if (await addStickyNote(pendingCell, pendingSize, content)) closeDialog()
   }
 
   const gridCells = Array.from({ length: gridRows * gridColumns }, (_, index) => {
@@ -50,7 +57,11 @@ function Dashboard() {
     >
       <div
         data-dashboard-grid
-        className="grid h-dvh w-full grid-cols-5 grid-rows-4"
+        className="grid h-dvh w-full"
+        style={{
+          gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`,
+        }}
       >
         {gridCells}
         {stickyNotes.map((note) => (
@@ -71,12 +82,19 @@ function Dashboard() {
           {dashboardError}
         </p>
       )}
-      {pendingCell && (
+      {pendingCell && !pendingSize && (
         <StickyNoteSizeDialog
           canPlace={(size) => canPlaceStickyNote(pendingCell, size)}
+          onSelect={setPendingSize}
+          onClose={closeDialog}
+        />
+      )}
+      {pendingCell && pendingSize && (
+        <StickyNoteContentDialog
           isSaving={isSavingStickyNote}
-          onSelect={handleSelectSize}
-          onClose={() => setPendingCell(null)}
+          onSelect={handleSelectContent}
+          onBack={() => setPendingSize(null)}
+          onClose={closeDialog}
         />
       )}
     </main>

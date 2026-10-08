@@ -1,7 +1,7 @@
 import type { StickyNoteSize } from '../types/stickyNote'
 
-export const gridColumns = 5
-export const gridRows = 4
+export const gridColumns = 6
+export const gridRows = 5
 
 export const stickyNoteSizes: StickyNoteSize[] = [
   { columns: 1, rows: 1 },

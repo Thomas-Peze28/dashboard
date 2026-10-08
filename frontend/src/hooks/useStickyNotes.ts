@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { createStickyNote, fetchStickyNotes, removeStickyNote } from '../api/stickyNotes'
+import type { StickyNoteWidgetIds } from '../api/stickyNotes'
 import { gridColumns, gridRows } from '../constants/grid'
-import type { GridPosition, StickyNote, StickyNoteSize } from '../types/stickyNote'
+import type { GridPosition, StickyNote, StickyNoteContent, StickyNoteSize } from '../types/stickyNote'
 
 export function useStickyNotes() {
   const [stickyNotes, setStickyNotes] = useState<StickyNote[]>([])
-  const [stickyNoteWidgetId, setStickyNoteWidgetId] = useState<string | null>(null)
+  const [stickyNoteWidgetIds, setStickyNoteWidgetIds] = useState<StickyNoteWidgetIds | null>(null)
   const [isLoadingStickyNotes, setIsLoadingStickyNotes] = useState(true)
   const [isSavingStickyNote, setIsSavingStickyNote] = useState(false)
   const [deletingStickyNoteId, setDeletingStickyNoteId] = useState<string | null>(null)
@@ -15,11 +16,11 @@ export function useStickyNotes() {
     let isCancelled = false
     const loadStickyNotes = async () => {
       try {
-        const { widgetId, notes } = await fetchStickyNotes()
+        const { widgetIds, notes } = await fetchStickyNotes()
 
         if (isCancelled) return
 
-        setStickyNoteWidgetId(widgetId)
+        setStickyNoteWidgetIds(widgetIds)
         setStickyNotes(notes)
       } catch (error) {
         if (!isCancelled) {
@@ -59,14 +60,14 @@ export function useStickyNotes() {
   }
 
   // Renvoie true si le post-it a bien été enregistré.
-  const addStickyNote = async (position: GridPosition, size: StickyNoteSize) => {
-    if (!stickyNoteWidgetId || !canPlaceStickyNote(position, size)) return false
+  const addStickyNote = async (position: GridPosition, size: StickyNoteSize, content: StickyNoteContent) => {
+    if (!stickyNoteWidgetIds || !canPlaceStickyNote(position, size)) return false
 
     setIsSavingStickyNote(true)
     setDashboardError('')
 
     try {
-      const createdNote = await createStickyNote(stickyNoteWidgetId, position, size)
+      const createdNote = await createStickyNote(stickyNoteWidgetIds, position, size, content)
       setStickyNotes((current) => [...current, createdNote])
       return true
     } catch (error) {
@@ -93,7 +94,7 @@ export function useStickyNotes() {
 
   return {
     stickyNotes,
-    canAddStickyNote: !isLoadingStickyNotes && Boolean(stickyNoteWidgetId),
+    canAddStickyNote: !isLoadingStickyNotes && Boolean(stickyNoteWidgetIds),
     isSavingStickyNote,
     deletingStickyNoteId,
     dashboardError,
