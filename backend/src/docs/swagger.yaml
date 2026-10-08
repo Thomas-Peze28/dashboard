@@ -441,6 +441,50 @@ components:
           format: date-time
           example: '2011-09-03T15:26:22Z'
 
+    GithubNotification:
+      type: object
+      required: [id, title, type, reason, repository, url, updatedAt]
+      properties:
+        id:
+          type: string
+          example: '1001'
+        title:
+          type: string
+          example: Add weather widgets
+        type:
+          type: string
+          description: Subject type (PullRequest, Issue, Release, Discussion...)
+          example: PullRequest
+        reason:
+          type: string
+          description: Why the user received the notification (mention, review_requested, subscribed...)
+          example: review_requested
+        repository:
+          type: string
+          example: epitech/dashboard
+        url:
+          type: string
+          format: uri
+          description: Page of the issue or pull request on github.com, or the repository page for other subjects
+          example: https://github.com/epitech/dashboard/pull/42
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-08T08:00:00Z'
+
+    GithubNotificationsData:
+      type: object
+      required: [count, notifications]
+      properties:
+        count:
+          type: integer
+          description: Number of notifications returned (limited by the `limit` parameter)
+          example: 1
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/GithubNotification'
+
   parameters:
     UserWidgetId:
       name: id
@@ -922,6 +966,7 @@ paths:
                       - $ref: '#/components/schemas/WeatherForecastData'
                       - $ref: '#/components/schemas/GithubRepoData'
                       - $ref: '#/components/schemas/GithubProfileData'
+                      - $ref: '#/components/schemas/GithubNotificationsData'
         '400':
           description: Widget ID is missing, or the widget configuration is invalid (ex. city or repository not found)
           content:
@@ -931,7 +976,13 @@ paths:
         '401':
           description: Authentication is required or the token is invalid
         '403':
-          description: The widget needs a linked third-party account (ex. GitHub) that is missing, expired or revoked
+          description: The widget needs a linked third-party account (ex. GitHub) that is missing, expired, revoked or lacks permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: The rate limit of the external API (ex. GitHub) is reached
           content:
             application/json:
               schema:
@@ -1140,8 +1191,19 @@ paths:
                 tokenInvalid:
                   value:
                     error: GitHub token expired or revoked. Please sign in with GitHub again.
+                forbidden:
+                  value:
+                    error: Missing GitHub permissions. Please sign in with GitHub again.
         '404':
           description: Widget not found for the authenticated user
+        '429':
+          description: GitHub rate limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: GitHub rate limit reached. Please try again later.
         '502':
           description: GitHub is unavailable
           content:
@@ -1203,8 +1265,79 @@ paths:
                 tokenInvalid:
                   value:
                     error: GitHub token expired or revoked. Please sign in with GitHub again.
+                forbidden:
+                  value:
+                    error: Missing GitHub permissions. Please sign in with GitHub again.
         '404':
           description: Widget not found for the authenticated user
+        '429':
+          description: GitHub rate limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: GitHub rate limit reached. Please try again later.
+        '502':
+          description: GitHub is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: External service unavailable.
+
+  '/api/widgets/{id}/data#github_notifications':
+    get:
+      summary: Unread GitHub notifications of the user
+      description: |
+        Configuration (`config` of the UserWidget): `{ "limit": 10 }` (10 by default, clamped between 1 and 50).
+        Requires a GitHub account linked to the user, signed in with the `repo` scope.
+      operationId: getWidgetData_github_notifications
+      tags: ['Widget - GitHub']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GithubNotificationsData'
+        '401':
+          description: Authentication is required or the token is invalid
+        '403':
+          description: No GitHub account linked, or the GitHub token is expired, revoked or lacks permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notLinked:
+                  value:
+                    error: No GitHub account linked. Please sign in with GitHub.
+                tokenInvalid:
+                  value:
+                    error: GitHub token expired or revoked. Please sign in with GitHub again.
+                forbidden:
+                  value:
+                    error: Missing GitHub permissions. Please sign in with GitHub again.
+        '404':
+          description: Widget not found for the authenticated user
+        '429':
+          description: GitHub rate limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: GitHub rate limit reached. Please try again later.
         '502':
           description: GitHub is unavailable
           content:
