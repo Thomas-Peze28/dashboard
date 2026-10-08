@@ -100,7 +100,18 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
                     {
                         name: 'username',
                         type: 'string',
-                        description: 'GitHub username (ex: Steve Jobs). Leave empty to display your own profile',
+                        description: 'GitHub username (ex: Steve_Jobs). Leave empty to display your own profile',
+                    },
+                ],
+            },
+            {
+                name: 'github_notifications',
+                description: "Your unread GitHub notifications.",
+                params: [
+                    {
+                        name: 'limit',
+                        type: 'integer',
+                        description: 'Maximum number of notifications to display (1 to 50)',
                     },
                 ],
             },

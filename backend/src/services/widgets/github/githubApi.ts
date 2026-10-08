@@ -45,6 +45,12 @@ export const githubFetch = async (path: string, token: string): Promise<unknown>
     if (response.status === 401) {
         throw new Error('GITHUB_TOKEN_INVALID');
     }
+    if (response.status === 429 || (response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0')) {
+        throw new Error('GITHUB_RATE_LIMITED');
+    }
+    if (response.status === 403) {
+        throw new Error('GITHUB_FORBIDDEN');
+    }
     if (response.status === 404) {
         throw new Error('GITHUB_NOT_FOUND');
     }

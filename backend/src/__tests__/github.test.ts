@@ -20,6 +20,42 @@ const REPO_REACT = {
     owner: { login: 'facebook', avatar_url: 'https://avatars.githubusercontent.com/u/69631?v=4' },
 };
 
+const NOTIFICATIONS = [
+    {
+        id: '1001',
+        reason: 'review_requested',
+        updated_at: '2026-10-08T08:00:00Z',
+        subject: {
+            title: 'Add weather widgets',
+            type: 'PullRequest',
+            url: 'https://api.github.com/repos/epitech/dashboard/pulls/42',
+        },
+        repository: { full_name: 'epitech/dashboard', html_url: 'https://github.com/epitech/dashboard' },
+    },
+    {
+        id: '1002',
+        reason: 'mention',
+        updated_at: '2026-10-08T07:30:00Z',
+        subject: {
+            title: 'Refresh interval is ignored',
+            type: 'Issue',
+            url: 'https://api.github.com/repos/epitech/dashboard/issues/7',
+        },
+        repository: { full_name: 'epitech/dashboard', html_url: 'https://github.com/epitech/dashboard' },
+    },
+    {
+        id: '1003',
+        reason: 'subscribed',
+        updated_at: '2026-10-07T18:00:00Z',
+        subject: {
+            title: 'v2.0.0',
+            type: 'Release',
+            url: 'https://api.github.com/repos/epitech/dashboard/releases/123456',
+        },
+        repository: { full_name: 'epitech/dashboard', html_url: 'https://github.com/epitech/dashboard' },
+    },
+];
+
 const PROFILE_TORVALDS = {
     login: 'torvalds',
     name: 'Linus Torvalds',
@@ -38,10 +74,10 @@ const PROFILE_TORVALDS = {
 /**
 * Stubs global fetch with a single GitHub API response.
 **/
-const mockGithub = (body: unknown, status = 200) => {
+const mockGithub = (body: unknown, status = 200, headers: Record<string, string> = {}) => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(body), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
     }));
     vi.stubGlobal('fetch', fetchMock);
     return fetchMock;
@@ -67,6 +103,7 @@ describe('GitHub widgets Integration Tests', () => {
     let userId = '';
     let repoWidgetId = '';
     let profileWidgetId = '';
+    let notificationsWidgetId = '';
 
     /**
     * Points the github_repo widget to another repository.
@@ -92,9 +129,22 @@ describe('GitHub widgets Integration Tests', () => {
         .get(`/api/widgets/${profileWidgetId}/data`)
         .set('Authorization', `Bearer ${token}`);
 
+    /**
+    * Changes the number of notifications of the github_notifications widget.
+    **/
+    const setLimit = (limit: unknown) => request(app)
+        .patch(`/api/widgets/${notificationsWidgetId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { limit } });
+
+    const getNotificationsData = () => request(app)
+        .get(`/api/widgets/${notificationsWidgetId}/data`)
+        .set('Authorization', `Bearer ${token}`);
+
     beforeAll(async () => {
         const repoWidget = await ensureGithubWidget('github_repo');
         const profileWidget = await ensureGithubWidget('github_profile');
+        const notificationsWidget = await ensureGithubWidget('github_notifications');
 
         const authRes = await request(app)
             .post('/api/auth/register')
@@ -131,6 +181,12 @@ describe('GitHub widgets Integration Tests', () => {
             .set('Authorization', `Bearer ${token}`)
             .send({ widgetId: profileWidget.id, config: { username: 'torvalds' } });
         profileWidgetId = profileRes.body.widget.id;
+
+        const notificationsRes = await request(app)
+            .post('/api/widgets')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ widgetId: notificationsWidget.id, config: { limit: 5 } });
+        notificationsWidgetId = notificationsRes.body.widget.id;
     });
 
     afterEach(() => {
@@ -272,6 +328,75 @@ describe('GitHub widgets Integration Tests', () => {
 
             expect(res.status).toBe(400);
             expect(res.body.error).toBe('GitHub resource not found.');
+        });
+    });
+
+    describe('github_notifications', () => {
+
+        it('devrait renvoyer les notifications non lues avec un lien vers la page GitHub', async () => {
+            await setLimit(5);
+            const fetchMock = mockGithub(NOTIFICATIONS);
+
+            const res = await getNotificationsData();
+
+            expect(res.status).toBe(200);
+            expect(res.body.data.count).toBe(3);
+            expect(res.body.data.notifications[0]).toEqual({
+                id: '1001',
+                title: 'Add weather widgets',
+                type: 'PullRequest',
+                reason: 'review_requested',
+                repository: 'epitech/dashboard',
+                url: 'https://github.com/epitech/dashboard/pull/42',
+                updatedAt: '2026-10-08T08:00:00Z',
+            });
+            expect(res.body.data.notifications[1].url).toBe('https://github.com/epitech/dashboard/issues/7');
+            expect(res.body.data.notifications[2].url).toBe('https://github.com/epitech/dashboard');
+
+            const [url] = fetchMock.mock.calls[0] as unknown as [string];
+            expect(url).toBe('https://api.github.com/notifications?per_page=5');
+        });
+
+        it('devrait renvoyer une liste vide s\'il n\'y a aucune notification', async () => {
+            mockGithub([]);
+
+            const res = await getNotificationsData();
+
+            expect(res.status).toBe(200);
+            expect(res.body.data).toEqual({ count: 0, notifications: [] });
+        });
+
+        it.each([
+            [100, '50'],
+            [0, '1'],
+            ['abc', '10'],
+            [undefined, '10'],
+        ])('limit = %j devrait demander per_page=%s', async (limit, perPage) => {
+            await setLimit(limit);
+            const fetchMock = mockGithub([]);
+
+            await getNotificationsData();
+
+            const [url] = fetchMock.mock.calls[0] as unknown as [string];
+            expect(new URL(url).searchParams.get('per_page')).toBe(perPage);
+        });
+
+        it('403 si le token n\'a pas les permissions nécessaires', async () => {
+            mockGithub({ message: 'Resource not accessible by integration' }, 403, { 'x-ratelimit-remaining': '4999' });
+
+            const res = await getNotificationsData();
+
+            expect(res.status).toBe(403);
+            expect(res.body.error).toBe('Missing GitHub permissions. Please sign in with GitHub again.');
+        });
+
+        it('429 si la limite de requêtes GitHub est atteinte', async () => {
+            mockGithub({ message: 'API rate limit exceeded' }, 403, { 'x-ratelimit-remaining': '0' });
+
+            const res = await getNotificationsData();
+
+            expect(res.status).toBe(429);
+            expect(res.body.error).toBe('GitHub rate limit reached. Please try again later.');
         });
     });
 

@@ -152,6 +152,8 @@ const WIDGET_DATA_ERRORS: Record<string, { status: number; message: string }> = 
     GITHUB_NOT_FOUND: { status: 400, message: 'GitHub resource not found.' },
     GITHUB_NOT_LINKED: { status: 403, message: 'No GitHub account linked. Please sign in with GitHub.' },
     GITHUB_TOKEN_INVALID: { status: 403, message: 'GitHub token expired or revoked. Please sign in with GitHub again.' },
+    GITHUB_FORBIDDEN: { status: 403, message: 'Missing GitHub permissions. Please sign in with GitHub again.' },
+    GITHUB_RATE_LIMITED: { status: 429, message: 'GitHub rate limit reached. Please try again later.' },
     UPSTREAM_ERROR: { status: 502, message: 'External service unavailable.' },
 };
 

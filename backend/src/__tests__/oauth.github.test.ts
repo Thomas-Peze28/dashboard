@@ -24,7 +24,7 @@ describe('OAuth GitHub Integration Tests', () => {
 
 			expect(res.status).toBe(302);
 			expect(res.headers.location).toContain('https://github.com/login/oauth/authorize');
-			expect(res.headers.location).toContain('scope=read%3Auser+user%3Aemail');
+			expect(res.headers.location).toContain('scope=read%3Auser+user%3Aemail+repo');
 		});
 	});
 
