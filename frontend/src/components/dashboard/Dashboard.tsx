@@ -7,11 +7,15 @@ import GridCell from './GridCell'
 import LogoutButton from './LogoutButton'
 import StickyNoteCard from './StickyNoteCard'
 import StickyNoteContentDialog from './StickyNoteContentDialog'
+import StickyNoteEditDialog from './StickyNoteEditDialog'
 import StickyNoteSizeDialog from './StickyNoteSizeDialog'
+
+type EditState = { noteId: string; step: 'menu' | 'size' | 'content' }
 
 function Dashboard() {
   const [pendingCell, setPendingCell] = useState<GridPosition | null>(null)
   const [pendingSize, setPendingSize] = useState<StickyNoteSize | null>(null)
+  const [editState, setEditState] = useState<EditState | null>(null)
   const {
     stickyNotes,
     canAddStickyNote,
@@ -21,6 +25,9 @@ function Dashboard() {
     isCellOccupied,
     canPlaceStickyNote,
     addStickyNote,
+    relocateStickyNote,
+    changeStickyNoteSize,
+    changeStickyNoteWidget,
     deleteStickyNote,
   } = useStickyNotes()
 
@@ -33,6 +40,10 @@ function Dashboard() {
     if (!pendingCell || !pendingSize) return
     if (await addStickyNote(pendingCell, pendingSize, content)) closeDialog()
   }
+
+  const editedNote = editState ? stickyNotes.find((note) => note.id === editState.noteId) : undefined
+  const closeEdit = () => setEditState(null)
+  const backToEditMenu = () => setEditState((current) => current && { ...current, step: 'menu' })
 
   const gridCells = Array.from({ length: gridRows * gridColumns }, (_, index) => {
     const row = Math.floor(index / gridColumns)
@@ -69,7 +80,9 @@ function Dashboard() {
             key={note.id}
             note={note}
             isDeleting={deletingStickyNoteId === note.id}
-            onDelete={() => deleteStickyNote(note.id)}
+            canMoveTo={(position) => canPlaceStickyNote(position, note, note.id)}
+            onMove={(position) => relocateStickyNote(note.id, position)}
+            onEdit={() => setEditState({ noteId: note.id, step: 'menu' })}
           />
         ))}
       </div>
@@ -91,10 +104,48 @@ function Dashboard() {
       )}
       {pendingCell && pendingSize && (
         <StickyNoteContentDialog
+          backLabel="Taille"
+          submitLabel="Ajouter"
           isSaving={isSavingStickyNote}
           onSelect={handleSelectContent}
           onBack={() => setPendingSize(null)}
           onClose={closeDialog}
+        />
+      )}
+      {editedNote && editState?.step === 'menu' && (
+        <StickyNoteEditDialog
+          onResize={() => setEditState({ noteId: editedNote.id, step: 'size' })}
+          onChangeContent={() => setEditState({ noteId: editedNote.id, step: 'content' })}
+          onDelete={() => {
+            closeEdit()
+            void deleteStickyNote(editedNote.id)
+          }}
+          onClose={closeEdit}
+        />
+      )}
+      {editedNote && editState?.step === 'size' && (
+        <StickyNoteSizeDialog
+          currentSize={editedNote}
+          isSaving={isSavingStickyNote}
+          canPlace={(size) => canPlaceStickyNote(editedNote, size, editedNote.id)}
+          onSelect={async (size) => {
+            if (await changeStickyNoteSize(editedNote.id, size)) closeEdit()
+          }}
+          onBack={backToEditMenu}
+          onClose={closeEdit}
+        />
+      )}
+      {editedNote && editState?.step === 'content' && (
+        <StickyNoteContentDialog
+          initialContent={editedNote.content}
+          backLabel="Retour"
+          submitLabel="Enregistrer"
+          isSaving={isSavingStickyNote}
+          onSelect={async (content) => {
+            if (await changeStickyNoteWidget(editedNote.id, content)) closeEdit()
+          }}
+          onBack={backToEditMenu}
+          onClose={closeEdit}
         />
       )}
     </main>

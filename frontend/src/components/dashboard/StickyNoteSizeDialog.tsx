@@ -1,16 +1,26 @@
 import { useEffect } from 'react'
-import { X } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 import pinImage from '../../assets/pin.png'
 import { stickyNoteSizes } from '../../constants/grid'
 import type { StickyNoteSize } from '../../types/stickyNote'
 
 type StickyNoteSizeDialogProps = {
+  currentSize?: StickyNoteSize
+  isSaving?: boolean
+  onBack?: () => void
   canPlace: (size: StickyNoteSize) => boolean
   onSelect: (size: StickyNoteSize) => void
   onClose: () => void
 }
 
-function StickyNoteSizeDialog({ canPlace, onSelect, onClose }: StickyNoteSizeDialogProps) {
+function StickyNoteSizeDialog({
+  currentSize,
+  isSaving = false,
+  onBack,
+  canPlace,
+  onSelect,
+  onClose,
+}: StickyNoteSizeDialogProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
@@ -55,16 +65,20 @@ function StickyNoteSizeDialog({ canPlace, onSelect, onClose }: StickyNoteSizeDia
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {stickyNoteSizes.map((size) => {
             const isAvailable = canPlace(size)
+            const isCurrent = size.columns === currentSize?.columns && size.rows === currentSize?.rows
 
             return (
               <button
                 key={`${size.columns}-${size.rows}`}
                 type="button"
-                disabled={!isAvailable}
+                disabled={!isAvailable || isSaving}
+                aria-pressed={currentSize ? isCurrent : undefined}
                 autoFocus={isAvailable && size.columns === 1 && size.rows === 1}
                 onClick={() => onSelect(size)}
                 aria-label={`${size.columns} par ${size.rows} cases${isAvailable ? '' : ', indisponible'}`}
-                className="flex min-w-0 flex-col items-center gap-2 rounded-md border border-gray-200 p-2 text-gray-800 transition hover:border-yellow-500 hover:bg-yellow-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:bg-white sm:p-3"
+                className={`flex min-w-0 flex-col items-center gap-2 rounded-md border p-2 text-gray-800 transition hover:border-yellow-500 hover:bg-yellow-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:bg-white sm:p-3 ${
+                  isCurrent ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200'
+                }`}
               >
                 <span
                   className="relative grid h-14 w-14 gap-0.5"
@@ -87,12 +101,26 @@ function StickyNoteSizeDialog({ canPlace, onSelect, onClose }: StickyNoteSizeDia
                   {size.columns} × {size.rows}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {isAvailable ? 'cases' : 'indisponible ici'}
+                  {isCurrent ? 'taille actuelle' : isAvailable ? 'cases' : 'indisponible ici'}
                 </span>
               </button>
             )
           })}
         </div>
+
+        {onBack && (
+          <footer className="mt-6 flex">
+            <button
+              type="button"
+              onClick={onBack}
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-700 disabled:opacity-60"
+            >
+              <ArrowLeft size={16} aria-hidden="true" />
+              Retour
+            </button>
+          </footer>
+        )}
       </section>
     </div>
   )

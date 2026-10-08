@@ -5,6 +5,9 @@ import type { StickyNoteContent, StickyNoteContentKind } from '../../types/stick
 import TimezonePicker from './clock/TimezonePicker'
 
 type StickyNoteContentDialogProps = {
+  initialContent?: StickyNoteContent
+  backLabel: string
+  submitLabel: string
   isSaving: boolean
   onSelect: (content: StickyNoteContent) => void
   onBack: () => void
@@ -16,9 +19,19 @@ const contentChoices: Array<{ kind: StickyNoteContentKind; label: string; icon: 
   { kind: 'clock', label: 'Horloge', icon: Clock },
 ]
 
-function StickyNoteContentDialog({ isSaving, onSelect, onBack, onClose }: StickyNoteContentDialogProps) {
-  const [kind, setKind] = useState<StickyNoteContentKind>('empty')
-  const [timezone, setTimezone] = useState(localTimezone)
+function StickyNoteContentDialog({
+  initialContent,
+  backLabel,
+  submitLabel,
+  isSaving,
+  onSelect,
+  onBack,
+  onClose,
+}: StickyNoteContentDialogProps) {
+  const [kind, setKind] = useState<StickyNoteContentKind>(initialContent?.kind ?? 'empty')
+  const [timezone, setTimezone] = useState(
+    initialContent?.kind === 'clock' ? initialContent.timezone : localTimezone,
+  )
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -97,7 +110,7 @@ function StickyNoteContentDialog({ isSaving, onSelect, onBack, onClose }: Sticky
             className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-700 disabled:opacity-60"
           >
             <ArrowLeft size={16} aria-hidden="true" />
-            Taille
+            {backLabel}
           </button>
           <button
             type="button"
@@ -105,7 +118,7 @@ function StickyNoteContentDialog({ isSaving, onSelect, onBack, onClose }: Sticky
             disabled={isSaving}
             className="rounded-md bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-yellow-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 disabled:cursor-wait disabled:opacity-60"
           >
-            {isSaving ? 'Enregistrement...' : 'Ajouter'}
+            {isSaving ? 'Enregistrement...' : submitLabel}
           </button>
         </footer>
       </section>

@@ -886,6 +886,10 @@ paths:
                 - $ref: '#/components/schemas/WidgetPosition'
                 - type: object
                   properties:
+                    widgetId:
+                      type: string
+                      format: uuid
+                      description: Catalog widget to display instead of the current one
                     config:
                       type: object
                       additionalProperties: true

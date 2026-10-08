@@ -81,7 +81,7 @@ export const editUserWidget = async (req: Request, res: Response): Promise<void>
     try {
         const userId = req.user!.userId;
         const { id } = req.params;
-        const { config, refreshInterval, positionX, positionY, width, height } = req.body;
+        const { widgetId, config, refreshInterval, positionX, positionY, width, height } = req.body;
 
         if (typeof id !== 'string') {
             res.status(400).json({ error: 'Widget id is required.' });
@@ -94,6 +94,7 @@ export const editUserWidget = async (req: Request, res: Response): Promise<void>
         }
 
         const updated = await widgetService.updateUserWidget(userId, id, {
+            widgetId,
             config,
             refreshInterval,
             positionX,
@@ -106,6 +107,10 @@ export const editUserWidget = async (req: Request, res: Response): Promise<void>
     } catch (error: unknown) {
         if (error instanceof Error && error.message === 'USER_WIDGET_NOT_FOUND') {
             res.status(404).json({ error: 'Widget not found.' });
+            return;
+        }
+        if (error instanceof Error && error.message === 'WIDGET_NOT_FOUND') {
+            res.status(404).json({ error: 'Widget not found in the catalog.' });
             return;
         }
         console.error(error);

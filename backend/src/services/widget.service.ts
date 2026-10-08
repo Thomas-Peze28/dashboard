@@ -19,6 +19,7 @@ export interface CreateUserWidgetInput {
 * Interface for updating an existing user widget, including the configuration and optional position and size parameters.
 **/
 export interface UpdateUserWidgetInput {
+    widgetId?: string;
     config?: Record<string, unknown>;
     refreshInterval?: number;
     positionX?: number;
@@ -100,9 +101,20 @@ export const updateUserWidget = async (userId: string, userWidgetId: string, dat
         throw new Error('USER_WIDGET_NOT_FOUND');
     }
 
+    if (data.widgetId !== undefined) {
+        const widgetDefinition = await prisma.widget.findUnique({
+            where: { id: data.widgetId },
+        });
+
+        if (!widgetDefinition) {
+            throw new Error('WIDGET_NOT_FOUND');
+        }
+    }
+
     return prisma.userWidget.update({
         where: { id: userWidgetId },
         data: {
+            ...(data.widgetId !== undefined && { widgetId: data.widgetId }),
             ...(data.config && { config: data.config as Prisma.InputJsonValue }),
             ...(data.refreshInterval !== undefined && { refreshInterval: data.refreshInterval }),
             ...(data.positionX !== undefined && { positionX: data.positionX }),

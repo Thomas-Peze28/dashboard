@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import { createStickyNote, fetchStickyNotes, removeStickyNote } from '../api/stickyNotes'
+import {
+  changeStickyNoteContent,
+  createStickyNote,
+  fetchStickyNotes,
+  moveStickyNote,
+  removeStickyNote,
+  resizeStickyNote,
+} from '../api/stickyNotes'
 import type { StickyNoteWidgetIds } from '../api/stickyNotes'
 import { gridColumns, gridRows } from '../constants/grid'
 import type { GridPosition, StickyNote, StickyNoteContent, StickyNoteSize } from '../types/stickyNote'
@@ -46,12 +53,15 @@ export function useStickyNotes() {
         column < note.column + note.columns,
     )
 
-  const canPlaceStickyNote = (position: GridPosition, size: StickyNoteSize) => {
+  // ignoredNoteId permet de ne pas compter le post-it qu'on est en train de déplacer.
+  const canPlaceStickyNote = (position: GridPosition, size: StickyNoteSize, ignoredNoteId?: string) => {
+    if (position.column < 0 || position.row < 0) return false
     if (position.column + size.columns > gridColumns) return false
     if (position.row + size.rows > gridRows) return false
 
     return stickyNotes.every(
       (note) =>
+        note.id === ignoredNoteId ||
         position.row >= note.row + note.rows ||
         note.row >= position.row + size.rows ||
         position.column >= note.column + note.columns ||
@@ -78,6 +88,63 @@ export function useStickyNotes() {
     }
   }
 
+  const relocateStickyNote = async (noteId: string, position: GridPosition) => {
+    const note = stickyNotes.find((current) => current.id === noteId)
+
+    if (!note || !canPlaceStickyNote(position, note, noteId)) return
+    if (note.row === position.row && note.column === position.column) return
+
+    const setPosition = ({ row, column }: GridPosition) =>
+      setStickyNotes((current) =>
+        current.map((item) => (item.id === noteId ? { ...item, row, column } : item)),
+      )
+
+    // On déplace tout de suite à l'écran, et on revient en arrière si l'enregistrement échoue.
+    setPosition(position)
+    setDashboardError('')
+
+    try {
+      await moveStickyNote(noteId, position)
+    } catch (error) {
+      setPosition(note)
+      setDashboardError(error instanceof Error ? error.message : 'Impossible de déplacer le post-it.')
+    }
+  }
+
+  // Renvoie true si la modification a bien été enregistrée.
+  const saveStickyNoteChange = async (noteId: string, changes: Partial<StickyNote>, save: () => Promise<void>) => {
+    setIsSavingStickyNote(true)
+    setDashboardError('')
+
+    try {
+      await save()
+      setStickyNotes((current) => current.map((note) => (note.id === noteId ? { ...note, ...changes } : note)))
+      return true
+    } catch (error) {
+      setDashboardError(error instanceof Error ? error.message : 'Impossible de modifier le post-it.')
+      return false
+    } finally {
+      setIsSavingStickyNote(false)
+    }
+  }
+
+  const changeStickyNoteSize = async (noteId: string, size: StickyNoteSize) => {
+    const note = stickyNotes.find((current) => current.id === noteId)
+    if (!note || !canPlaceStickyNote(note, size, noteId)) return false
+
+    return saveStickyNoteChange(noteId, { columns: size.columns, rows: size.rows }, () =>
+      resizeStickyNote(noteId, size),
+    )
+  }
+
+  const changeStickyNoteWidget = async (noteId: string, content: StickyNoteContent) => {
+    if (!stickyNoteWidgetIds) return false
+
+    return saveStickyNoteChange(noteId, { content }, () =>
+      changeStickyNoteContent(stickyNoteWidgetIds, noteId, content),
+    )
+  }
+
   const deleteStickyNote = async (noteId: string) => {
     setDeletingStickyNoteId(noteId)
     setDashboardError('')
@@ -101,6 +168,9 @@ export function useStickyNotes() {
     isCellOccupied,
     canPlaceStickyNote,
     addStickyNote,
+    relocateStickyNote,
+    changeStickyNoteSize,
+    changeStickyNoteWidget,
     deleteStickyNote,
   }
 }

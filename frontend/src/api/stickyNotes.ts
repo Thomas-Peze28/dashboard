@@ -121,6 +121,50 @@ export async function createStickyNote(
   return { id: data.widget.id, ...position, ...size, content }
 }
 
+async function patchStickyNote(noteId: string, body: Record<string, unknown>, fallbackError: string) {
+  const response = await fetch(`${apiBaseUrl}/api/widgets/${noteId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const data = (await response.json().catch(() => ({}))) as { error?: string }
+    throw new Error(data.error ?? fallbackError)
+  }
+}
+
+export async function moveStickyNote(noteId: string, position: GridPosition): Promise<void> {
+  await patchStickyNote(
+    noteId,
+    { positionX: position.column, positionY: position.row },
+    'Impossible de déplacer le post-it.',
+  )
+}
+
+export async function resizeStickyNote(noteId: string, size: StickyNoteSize): Promise<void> {
+  await patchStickyNote(
+    noteId,
+    { width: size.columns, height: size.rows },
+    'Impossible de modifier le post-it.',
+  )
+}
+
+export async function changeStickyNoteContent(
+  widgetIds: StickyNoteWidgetIds,
+  noteId: string,
+  content: StickyNoteContent,
+): Promise<void> {
+  await patchStickyNote(
+    noteId,
+    { widgetId: widgetIds[content.kind], config: toConfig(content) },
+    'Impossible de modifier le post-it.',
+  )
+}
+
 export async function removeStickyNote(noteId: string): Promise<void> {
   const response = await fetch(`${apiBaseUrl}/api/widgets/${noteId}`, {
     method: 'DELETE',
