@@ -76,6 +76,41 @@ describe('OAuth GitHub Integration Tests', () => {
 			expect(user?.accounts[0]?.accessToken).toBe('fake_github_access_token');
 		});
 
+		it('devrait mettre à jour le token du compte existant lors d\'une reconnexion', async () => {
+			const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+			fetchSpy.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({
+					access_token: 'new_fake_github_access_token',
+					token_type: 'bearer',
+					scope: 'read:user,user:email',
+				}),
+			} as Response);
+
+			fetchSpy.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({
+					id: githubUserId,
+					login: 'oauth-test-user',
+					name: 'OAuth GitHub Test User',
+					email: testEmail,
+				}),
+			} as Response);
+
+			const res = await request(app).get('/api/auth/github/callback?code=second_fake_code');
+
+			expect(res.status).toBe(302);
+
+			const user = await prisma.user.findUnique({
+				where: { email: testEmail },
+				include: { accounts: true },
+			});
+
+			expect(user?.accounts).toHaveLength(1);
+			expect(user?.accounts[0]?.accessToken).toBe('new_fake_github_access_token');
+		});
+
 		it('devrait rediriger vers /login?error=oauth_failed en cas d\'erreur de l\'API GitHub', async () => {
 			const fetchSpy = vi.spyOn(globalThis, 'fetch');
 

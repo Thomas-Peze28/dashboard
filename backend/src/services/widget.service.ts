@@ -159,5 +159,6 @@ export const fetchUserWidgetData = async (userId: string, userWidgetId: string) 
     }
 
     const rawConfig = (userWidget.config as Record<string, unknown>) || {};
-    return executeWidgetHandler(userWidget.widget.name, rawConfig);
+
+    return executeWidgetHandler(userWidget.widget.name, rawConfig, userId);
 };

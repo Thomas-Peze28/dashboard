@@ -78,4 +78,21 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
             },
         ],
     },
+    {
+        name: 'github',
+        description: "Follow GitHub repositories, profiles and notifications (requires a linked GitHub account).",
+        widgets: [
+            {
+                name: 'github_repo',
+                description: "Statistics of a GitHub repository.",
+                params: [
+                    {
+                        name: 'repository',
+                        type: 'string',
+                        description: 'Repository in owner/repo format (ex: facebook/react)',
+                    },
+                ],
+            },
+        ],
+    },
 ];
