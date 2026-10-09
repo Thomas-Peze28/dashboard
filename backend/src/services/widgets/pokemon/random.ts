@@ -18,7 +18,7 @@ export const getRandomPokemonCard = async (config: Record<string, unknown>) => {
         const card = await fetchRandomCard(language);
 
         if (card.image) {
-            return toCardData({ ...card, image: card.image });
+            return toCardData(card);
         }
     }
     throw new Error('UPSTREAM_ERROR');

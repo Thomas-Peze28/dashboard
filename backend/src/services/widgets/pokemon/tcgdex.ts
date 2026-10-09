@@ -15,8 +15,6 @@ export interface TcgdexCard {
     image?: string;
 }
 
-type IllustratedCard = TcgdexCard & { image: string };
-
 /**
 * Fetches a JSON payload from TCGdex.
 * @param url - The URL to fetch.
@@ -51,15 +49,6 @@ export const getLanguageFromConfig = (config: Record<string, unknown>): CardLang
 };
 
 /**
-* Keeps only the cards that have an image, as the others cannot be displayed.
-* @param cards - The cards returned by TCGdex.
-* @returns The cards with an image.
-**/
-const withImage = (cards: TcgdexCard[] | null): IllustratedCard[] => {
-    return (cards ?? []).filter((card): card is IllustratedCard => card.image !== undefined);
-};
-
-/**
 * Fetches a random card.
 * @param language - The card language.
 * @returns A random card.
@@ -76,10 +65,10 @@ export const fetchRandomCard = async (language: CardLanguage): Promise<TcgdexCar
 
 /**
 * Formats a TCGdex card for the widgets.
-* @param card - The TCGdex card, with an image.
+* @param card - The TCGdex card (it must have an image).
 * @returns The card data sent to the client.
 **/
-export const toCardData = (card: IllustratedCard) => ({
+export const toCardData = (card: TcgdexCard) => ({
     id: card.id,
     name: card.name,
     image: `${card.image}/high.webp`,
@@ -92,12 +81,13 @@ export const toCardData = (card: IllustratedCard) => ({
 * @param language - The card language.
 * @returns The best matching card, or null if no card matches.
 **/
-export const searchCard = async (name: string, language: CardLanguage): Promise<IllustratedCard | null> => {
+export const searchCard = async (name: string, language: CardLanguage): Promise<TcgdexCard | null> => {
 
     const url = new URL(`${TCGDEX_URL}/${language}/cards`);
     url.searchParams.set('name', name);
 
-    const cards = withImage(await fetchJson(url) as TcgdexCard[] | null);
+    const results = await fetchJson(url) as TcgdexCard[] | null;
+    const cards = (results ?? []).filter((card) => card.image);
     const exactMatch = cards.find((card) => card.name.toLowerCase() === name.toLowerCase());
 
     return exactMatch ?? cards[0] ?? null;
