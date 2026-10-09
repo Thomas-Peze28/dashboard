@@ -43,14 +43,11 @@ function toContent(widgetName: string, config: Record<string, unknown> | null): 
   const language = isPokemonLanguage(config?.language) ? config.language : defaultPokemonLanguage
 
   if (widgetName === catalogNames.pokemonRandom) return { kind: 'pokemonRandom', language }
-  // Seules les cartes gardées en favori (repérées par leur identifiant) sont affichées.
-  if (widgetName === catalogNames.pokemonCard && typeof config?.id === 'string') {
-    return {
-      kind: 'pokemonCard',
-      language,
-      cardId: config.id,
-      name: typeof config.name === 'string' ? config.name : '',
-    }
+  if (widgetName === catalogNames.pokemonCard) {
+    const name = typeof config?.name === 'string' ? config.name : ''
+
+    if (typeof config?.id === 'string') return { kind: 'pokemonCard', language, name, cardId: config.id }
+    return { kind: 'pokemonCard', language, name }
   }
 
   const city = typeof config?.city === 'string' && config.city.trim() !== '' ? config.city.trim() : defaultCity
@@ -80,7 +77,9 @@ function toConfig(content: StickyNoteContent) {
     case 'pokemonRandom':
       return { language: content.language }
     case 'pokemonCard':
-      return { id: content.cardId, name: content.name, language: content.language }
+      return content.cardId
+        ? { id: content.cardId, name: content.name, language: content.language }
+        : { name: content.name, language: content.language }
   }
 }
 

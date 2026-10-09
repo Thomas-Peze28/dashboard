@@ -17,29 +17,30 @@ const buttonClass =
   'absolute bottom-1 z-10 inline-flex h-7 w-7 items-center justify-center rounded-sm bg-white/85 shadow-sm transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60'
 
 // Les détails sont écrits dans la langue de la carte et peuvent manquer (ex : un Dresseur n'a pas de PV).
+// Une carte cherchée par son nom n'en a aucun : le backend ne renvoie alors que l'identifiant, le nom et l'image.
 type PokemonCardData = {
   id: string
   name: string
   image: string
-  category: string | null
-  hp: number | null
-  types: string[]
-  stage: string | null
-  rarity: string | null
-  set: string | null
-  illustrator: string | null
+  category?: string | null
+  hp?: number | null
+  types?: string[]
+  stage?: string | null
+  rarity?: string | null
+  set?: string | null
+  illustrator?: string | null
 }
 
 function PokemonCardInfo({ card }: { card: PokemonCardData }) {
   const details = [
     { label: 'Catégorie', value: card.category },
-    { label: 'Type', value: card.types.join(', ') },
+    { label: 'Type', value: card.types?.join(', ') },
     { label: 'PV', value: card.hp },
     { label: 'Stade', value: card.stage },
     { label: 'Rareté', value: card.rarity },
     { label: 'Extension', value: card.set },
     { label: 'Illustration', value: card.illustrator },
-  ].filter((detail) => detail.value !== null && detail.value !== '')
+  ].filter((detail) => detail.value !== null && detail.value !== undefined && detail.value !== '')
 
   return (
     <div className="flex min-w-0 flex-1 flex-col justify-center gap-[4cqmin] pr-[3cqmin]">
@@ -58,11 +59,13 @@ function PokemonCardInfo({ card }: { card: PokemonCardData }) {
 
 function PokemonContent({ noteId, content, columns, rows, onChangeContent }: PokemonContentProps) {
   const [card, setCard] = useState<PokemonCardData | null>(null)
-  const [hasError, setHasError] = useState(false)
+  const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [drawCount, setDrawCount] = useState(0)
   const [isSavingFavorite, setIsSavingFavorite] = useState(false)
-  const isFavorite = content.kind === 'pokemonCard'
+  const isFavorite = content.kind === 'pokemonCard' && Boolean(content.cardId)
+  // Carte cherchée par son nom : toujours la même, donc ni tirage ni favori.
+  const isNamed = content.kind === 'pokemonCard' && !content.cardId
 
   // Carte aléatoire : le backend en tire une nouvelle à chaque appel (une par affichage, puis une par clic).
   // Carte favorite : le backend renvoie toujours la même, inutile de la redemander en changeant de mode.
@@ -75,9 +78,12 @@ function PokemonContent({ noteId, content, columns, rows, onChangeContent }: Pok
         if (isCancelled) return
 
         setCard(loaded)
-        setHasError(false)
-      } catch {
-        if (!isCancelled) setHasError(true)
+        setError('')
+      } catch (loadError) {
+        if (isCancelled) return
+
+        const message = loadError instanceof Error ? loadError.message : ''
+        setError(message === 'Pokémon card not found.' ? 'Carte introuvable' : 'Carte indisponible')
       } finally {
         if (!isCancelled) setIsLoading(false)
       }
@@ -112,7 +118,7 @@ function PokemonContent({ noteId, content, columns, rows, onChangeContent }: Pok
 
   return (
     <div className="absolute inset-0 flex items-center justify-center gap-[5cqmin] p-[2cqmin] text-gray-900 [container-type:size] group-hover/note:z-20">
-      {card && !hasError ? (
+      {card && !error ? (
         <img
           src={card.image}
           alt={card.name}
@@ -120,7 +126,7 @@ function PokemonContent({ noteId, content, columns, rows, onChangeContent }: Pok
           draggable={false}
           onError={() => {
             setCard(null)
-            setHasError(true)
+            setError('Carte indisponible')
           }}
           // Au survol, la carte s'agrandit au-delà du post-it pour rester lisible (surtout en 1 × 1).
           className={`h-full object-contain drop-shadow-md transition-transform duration-200 ${
@@ -131,11 +137,11 @@ function PokemonContent({ noteId, content, columns, rows, onChangeContent }: Pok
         />
       ) : (
         <span className="text-center text-[8cqmin] leading-tight text-gray-700">
-          {hasError ? 'Carte indisponible' : 'Chargement...'}
+          {error || 'Chargement...'}
         </span>
       )}
-      {isLarge && card && !hasError && <PokemonCardInfo card={card} />}
-      {!isFavorite && (
+      {isLarge && card && !error && <PokemonCardInfo card={card} />}
+      {!isFavorite && !isNamed && (
         <button
           type="button"
           onClick={handleReload}
@@ -147,7 +153,7 @@ function PokemonContent({ noteId, content, columns, rows, onChangeContent }: Pok
           <RefreshCw size={14} aria-hidden="true" className={isLoading ? 'animate-spin' : ''} />
         </button>
       )}
-      {card && !hasError && (
+      {card && !error && !isNamed && (
         <button
           type="button"
           onClick={() => void handleToggleFavorite()}

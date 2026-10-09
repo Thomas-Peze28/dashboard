@@ -140,9 +140,9 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
         {note.content.kind === 'clock' ? (
           <ClockContent timezone={note.content.timezone} columns={note.columns} rows={note.rows} />
         ) : note.content.kind === 'pokemonRandom' || note.content.kind === 'pokemonCard' ? (
-          // La clé force le tirage d'une nouvelle carte quand la langue change.
+          // La clé recharge la carte quand la langue ou le nom cherché change, mais pas quand on la met en favori.
           <PokemonContent
-            key={note.content.language}
+            key={`${note.content.language}:${note.content.kind === 'pokemonCard' && !note.content.cardId ? note.content.name : ''}`}
             noteId={note.id}
             content={note.content}
             columns={note.columns}
