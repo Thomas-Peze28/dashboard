@@ -142,6 +142,11 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
                         description: 'Card name, in the card language (ex: Dracaufeu in French, Charizard in English)',
                     },
                     {
+                        name: 'id',
+                        type: 'string',
+                        description: 'Optional TCGdex card ID (ex: base1-4): displays this exact card instead of searching by name',
+                    },
+                    {
                         name: 'language',
                         type: 'string',
                         description: 'Card language: fr, en, de, es, it, pt or ja (fr by default)',

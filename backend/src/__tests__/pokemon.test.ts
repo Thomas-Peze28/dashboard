@@ -121,6 +121,28 @@ describe('Pokémon widgets Integration Tests', () => {
     });
 
 
+    it('pokemon_card devrait renvoyer la carte exacte avec un id', async () => {
+        await request(app)
+            .patch(`/api/widgets/${cardWidgetId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ config: { id: 'base1-4' } });
+
+        const fetchMock = mockTcgdex({ body: { ...CHARIZARD, hp: 120 } });
+
+        const res = await request(app)
+            .get(`/api/widgets/${cardWidgetId}/data`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.data).toMatchObject({ id: 'base1-4', hp: 120 });
+        expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://api.tcgdex.net/v2/fr/cards/base1-4');
+
+        await request(app)
+            .patch(`/api/widgets/${cardWidgetId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ config: { name: 'Dracaufeu' } });
+    });
+
     it('pokemon_card devrait chercher en anglais avec language: en', async () => {
         await request(app)
             .patch(`/api/widgets/${cardWidgetId}`)

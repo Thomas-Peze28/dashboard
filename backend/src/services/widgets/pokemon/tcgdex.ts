@@ -71,6 +71,16 @@ export const fetchRandomCard = async (language: CardLanguage): Promise<TcgdexCar
 };
 
 /**
+* Fetches a card by its TCGdex ID.
+* @param id - The TCGdex card ID.
+* @param language - The card language.
+* @returns The full card, or null if it does not exist in this language.
+**/
+export const fetchCardById = async (id: string, language: CardLanguage): Promise<TcgdexCard | null> => {
+    return await fetchJson(new URL(`${TCGDEX_URL}/${language}/cards/${encodeURIComponent(id)}`)) as TcgdexCard | null;
+};
+
+/**
 * Formats a TCGdex card for the widgets.
 * @param card - The TCGdex card (it must have an image).
 * @returns The card data sent to the client.
