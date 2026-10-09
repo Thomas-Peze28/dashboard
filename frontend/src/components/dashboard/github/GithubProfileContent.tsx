@@ -1,8 +1,8 @@
 import { BookMarked, Building2, CalendarDays, Link, MapPin, UserRoundCheck, Users } from 'lucide-react'
 import { useStickyNoteData } from '../../../hooks/useStickyNoteData'
+import { GithubDetails, GithubPlaceholder, GithubStats, type GithubDetail, type GithubStat } from './GithubParts'
 import {
   describeGithubError,
-  formatCount,
   githubRefreshDelay,
   isGithubLoginRequired,
   redirectToGithubLogin,
@@ -31,94 +31,17 @@ type GithubProfileData = {
 
 const memberSinceFormat = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
 
-// Une tuile par compteur. isCompact : libellé raccourci pour tenir sur le petit post-it.
-function ProfileStats({
-  profile,
-  className,
-  isCompact = false,
-}: {
-  profile: GithubProfileData
-  className: string
-  isCompact?: boolean
-}) {
-  const stats = [
-    { icon: BookMarked, label: 'dépôts', value: profile.publicRepos },
-    { icon: Users, label: 'abonnés', value: profile.followers },
-    { icon: UserRoundCheck, label: isCompact ? 'suivis' : 'abonnements', value: profile.following },
-  ]
-
-  return (
-    <dl className={`flex w-full gap-[0.5em] text-center leading-none ${className}`}>
-      {stats.map(({ icon: Icon, label, value }) => (
-        <div
-          key={label}
-          className="flex min-w-0 flex-1 flex-col items-center gap-[0.25em] rounded-md bg-white/55 px-[0.2em] py-[0.45em] shadow-sm"
-        >
-          <Icon aria-hidden="true" className="h-[0.9em] w-[0.9em] text-gray-700" />
-          <dt className="order-last max-w-full truncate text-[0.55em] text-gray-700">{label}</dt>
-          <dd className="font-bold tabular-nums">{formatCount(value)}</dd>
-        </div>
-      ))}
-    </dl>
-  )
-}
-
-type ProfileDetail = { icon: typeof Link; label: string; value: string | null; href?: string }
-
-function ProfileDetails({ details, className }: { details: ProfileDetail[]; className: string }) {
-  const visibleDetails = details.filter((detail) => detail.value)
-
-  if (visibleDetails.length === 0) return null
-
-  return (
-    <ul className={`min-w-0 leading-none text-gray-800 ${className}`}>
-      {visibleDetails.map(({ icon: Icon, label, value, href }) => (
-        <li key={label} title={label} className="flex min-w-0 items-center gap-[0.6em]">
-          <span className="flex h-[1.9em] w-[1.9em] shrink-0 items-center justify-center rounded-full bg-white/55 shadow-sm">
-            <Icon aria-hidden="true" className="h-[1.05em] w-[1.05em]" />
-          </span>
-          <span className="sr-only">{label} :</span>
-          {href ? (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="truncate font-semibold underline underline-offset-2 hover:text-gray-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
-            >
-              {value}
-            </a>
-          ) : (
-            <span className="truncate">{value}</span>
-          )}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
 function GithubProfileContent({ noteId, columns, rows }: GithubProfileContentProps) {
   const { data: profile, error } = useStickyNoteData<GithubProfileData>(noteId, githubRefreshDelay)
 
   if (!profile) {
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-[4cqmin] overflow-hidden p-[7cqmin] text-center text-gray-900 [container-type:size]">
-        <span className="max-w-full truncate text-[10cqmin] font-semibold leading-none text-gray-700">
-          Profil GitHub
-        </span>
-        {isGithubLoginRequired(error) ? (
-          <button
-            type="button"
-            onClick={redirectToGithubLogin}
-            className="rounded-sm bg-gray-900 px-[4cqmin] py-[2.5cqmin] text-[7cqmin] font-semibold leading-tight text-white shadow-sm transition hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
-          >
-            Se connecter avec GitHub
-          </button>
-        ) : (
-          <span className="text-[8cqmin] leading-tight text-gray-700">
-            {error === null ? 'Chargement...' : describeGithubError(error, 'Profil introuvable')}
-          </span>
-        )}
-      </div>
+      <GithubPlaceholder
+        title="Profil GitHub"
+        message={error === null ? 'Chargement...' : describeGithubError(error, 'Profil introuvable')}
+        isError={error !== null}
+        onLogin={isGithubLoginRequired(error) ? redirectToGithubLogin : undefined}
+      />
     )
   }
 
@@ -137,12 +60,17 @@ function GithubProfileContent({ noteId, columns, rows }: GithubProfileContentPro
       {profile.bio ?? 'Aucune description sur ce profil.'}
     </p>
   )
-  const placeDetails: ProfileDetail[] = [
+  const stats = (followingLabel: string): GithubStat[] => [
+    { icon: BookMarked, label: 'dépôts', value: profile.publicRepos },
+    { icon: Users, label: 'abonnés', value: profile.followers },
+    { icon: UserRoundCheck, label: followingLabel, value: profile.following },
+  ]
+  const placeDetails: GithubDetail[] = [
     { icon: Building2, label: 'Organisation', value: profile.company },
     { icon: MapPin, label: 'Lieu', value: profile.location },
   ]
   // Grand format uniquement : le lien du profil se place sous la date d'inscription.
-  const accountDetails: ProfileDetail[] = [
+  const accountDetails: GithubDetail[] = [
     {
       icon: CalendarDays,
       label: 'Inscription',
@@ -176,10 +104,10 @@ function GithubProfileContent({ noteId, columns, rows }: GithubProfileContentPro
             {identity('text-[9cqmin]', 'text-[5.5cqmin]')}
             {bio}
             <div className="flex gap-[4cqmin] text-[4.5cqmin]">
-              <ProfileDetails details={placeDetails} className="flex flex-1 flex-col gap-[2.5cqmin]" />
-              <ProfileDetails details={accountDetails} className="flex flex-1 flex-col gap-[2.5cqmin]" />
+              <GithubDetails details={placeDetails} className="flex flex-1 flex-col gap-[2.5cqmin]" />
+              <GithubDetails details={accountDetails} className="flex flex-1 flex-col gap-[2.5cqmin]" />
             </div>
-            <ProfileStats profile={profile} className="text-[5.5cqmin]" />
+            <GithubStats stats={stats('abonnements')} className="text-[5.5cqmin]" />
           </div>
         </div>
       ) : columns > 1 ? (
@@ -189,14 +117,14 @@ function GithubProfileContent({ noteId, columns, rows }: GithubProfileContentPro
             {identity('text-[8.5cqmin]', 'text-[5.5cqmin]')}
           </div>
           {bio}
-          <ProfileDetails details={placeDetails} className="grid grid-cols-2 gap-[3cqmin] text-[4.8cqmin]" />
-          <ProfileStats profile={profile} className="text-[5.5cqmin]" />
+          <GithubDetails details={placeDetails} className="grid grid-cols-2 gap-[3cqmin] text-[4.8cqmin]" />
+          <GithubStats stats={stats('abonnements')} className="text-[5.5cqmin]" />
         </div>
       ) : (
         <div className="flex h-full w-full flex-col items-center justify-center gap-[5cqmin] p-[6cqmin] text-center">
           {avatar('h-[24cqmin] w-[24cqmin]')}
           <span className="max-w-full truncate text-[10cqmin] font-bold leading-none">{displayName}</span>
-          <ProfileStats profile={profile} className="text-[7.5cqmin]" isCompact />
+          <GithubStats stats={stats('suivis')} className="text-[7.5cqmin]" />
         </div>
       )}
     </div>

@@ -39,7 +39,9 @@ function Dashboard() {
 
   // Un widget GitHub sans compte relié envoie directement vers la connexion GitHub.
   const connectGithubIfNeeded = async (noteId: string, content: StickyNoteContent) => {
-    if (content.kind === 'githubProfile' && (await needsGithubLogin(noteId))) redirectToGithubLogin()
+    const isGithubWidget = content.kind === 'githubProfile' || content.kind === 'githubRepo'
+
+    if (isGithubWidget && (await needsGithubLogin(noteId))) redirectToGithubLogin()
   }
 
   const handleSelectContent = async (content: StickyNoteContent) => {

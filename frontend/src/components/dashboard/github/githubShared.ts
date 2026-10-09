@@ -3,7 +3,6 @@ import { fetchStickyNoteData } from '../../../api/stickyNotes'
 
 export const githubRefreshDelay = 10 * 60 * 1000
 
-// Messages d'erreur du backend pour les widgets GitHub, traduits pour le post-it.
 const errorLabels: Record<string, string> = {
   'No GitHub account linked. Please sign in with GitHub.': 'Connectez-vous avec GitHub pour utiliser ce widget',
   'GitHub token expired or revoked. Please sign in with GitHub again.': 'Reconnectez-vous avec GitHub',
@@ -12,7 +11,6 @@ const errorLabels: Record<string, string> = {
   'Invalid widget configuration.': 'Configuration invalide',
 }
 
-// Erreurs qui se règlent en (re)passant par la connexion GitHub.
 const loginRequiredErrors = [
   'No GitHub account linked. Please sign in with GitHub.',
   'GitHub token expired or revoked. Please sign in with GitHub again.',
@@ -21,12 +19,10 @@ const loginRequiredErrors = [
 
 export const isGithubLoginRequired = (error: string | null) => error !== null && loginRequiredErrors.includes(error)
 
-// Au retour de GitHub, le backend relie le compte et renvoie vers le dashboard.
 export const redirectToGithubLogin = () => {
   window.location.href = `${apiBaseUrl}/api/auth/github`
 }
 
-// Vrai si le widget GitHub de ce post-it ne peut pas charger ses données sans connexion GitHub.
 export async function needsGithubLogin(noteId: string) {
   try {
     await fetchStickyNoteData(noteId)

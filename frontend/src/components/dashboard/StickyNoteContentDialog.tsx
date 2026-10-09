@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, CircleUser, Clock, CloudSun, Dices, Search, X } from 'lucide-react'
+import { ArrowLeft, BookMarked, CircleUser, Clock, CloudSun, Dices, Search, X } from 'lucide-react'
 import { defaultPokemonLanguage } from '../../constants/pokemon'
 import { localTimezone } from '../../constants/timezones'
 import { defaultForecastDays, getMaxForecastDays } from '../../constants/weather'
@@ -19,7 +19,10 @@ type StickyNoteContentDialogProps = {
   onClose: () => void
 }
 
-type WidgetChoice = 'clock' | 'weather' | 'pokemon' | 'pokemonCard' | 'githubProfile'
+type WidgetChoice = 'clock' | 'weather' | 'pokemon' | 'pokemonCard' | 'githubProfile' | 'githubRepo'
+
+// Même format que celui attendu par le backend : propriétaire/dépôt.
+const repositoryPattern = /^[\w.-]+\/[\w.-]+$/
 
 const widgetChoices: Array<{ widget: WidgetChoice; label: string; icon: typeof Clock }> = [
   { widget: 'clock', label: 'Horloge', icon: Clock },
@@ -27,6 +30,7 @@ const widgetChoices: Array<{ widget: WidgetChoice; label: string; icon: typeof C
   { widget: 'pokemon', label: 'Pokémon aléatoire', icon: Dices },
   { widget: 'pokemonCard', label: 'Carte Pokémon', icon: Search },
   { widget: 'githubProfile', label: 'Profil GitHub', icon: CircleUser },
+  { widget: 'githubRepo', label: 'Dépôt GitHub', icon: BookMarked },
 ]
 
 function StickyNoteContentDialog({
@@ -46,6 +50,7 @@ function StickyNoteContentDialog({
     // Une carte gardée en favori vient du tirage aléatoire.
     if (initialContent.kind === 'pokemonCard') return initialContent.cardId ? 'pokemon' : 'pokemonCard'
     if (initialContent.kind === 'githubProfile') return 'githubProfile'
+    if (initialContent.kind === 'githubRepo') return 'githubRepo'
     return 'weather'
   })
   const [timezone, setTimezone] = useState(
@@ -64,8 +69,12 @@ function StickyNoteContentDialog({
   const [pokemonName, setPokemonName] = useState(
     initialContent?.kind === 'pokemonCard' && !initialContent.cardId ? initialContent.name : '',
   )
+  const [repository, setRepository] = useState(
+    initialContent?.kind === 'githubRepo' ? initialContent.repository : '',
+  )
   const canSubmit =
     !isSaving &&
+    (widget !== 'githubRepo' || repositoryPattern.test(repository.trim())) &&
     (widget !== 'weather' || city.trim() !== '') &&
     (widget !== 'pokemonCard' || pokemonName.trim() !== '')
 
@@ -84,6 +93,7 @@ function StickyNoteContentDialog({
     if (widget === 'clock') onSelect({ kind: 'clock', timezone })
     else if (widget === 'pokemon') onSelect({ kind: 'pokemonRandom', language })
     else if (widget === 'githubProfile') onSelect({ kind: 'githubProfile' })
+    else if (widget === 'githubRepo') onSelect({ kind: 'githubRepo', repository: repository.trim() })
     else if (widget === 'pokemonCard') onSelect({ kind: 'pokemonCard', language, name: pokemonName.trim() })
     else if (weatherMode === 'current') onSelect({ kind: 'weatherCurrent', city: city.trim() })
     else onSelect({ kind: 'weatherForecast', city: city.trim(), days })
@@ -147,6 +157,29 @@ function StickyNoteContentDialog({
           <TimezonePicker value={timezone} onChange={setTimezone} />
         ) : widget === 'pokemon' ? (
           <PokemonLanguagePicker value={language} onChange={setLanguage} />
+        ) : widget === 'githubRepo' ? (
+          <>
+            <label htmlFor="github-repository" className="mt-4 block text-sm font-medium text-gray-800">
+              Dépôt GitHub
+            </label>
+            <input
+              id="github-repository"
+              type="text"
+              value={repository}
+              autoFocus
+              autoComplete="off"
+              placeholder="facebook/react"
+              onChange={(event) => setRepository(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') handleSubmit()
+              }}
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Au format propriétaire/dépôt. Si votre compte GitHub n’est pas encore relié, vous serez redirigé vers
+              GitHub pour vous connecter.
+            </p>
+          </>
         ) : widget === 'githubProfile' ? (
           <p className="mt-4 text-sm text-gray-600">
             Affiche votre profil GitHub. Si votre compte GitHub n’est pas encore relié, vous serez redirigé vers

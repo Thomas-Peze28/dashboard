@@ -5,6 +5,7 @@ import { gridColumns, gridRows } from '../../constants/grid'
 import type { GridPosition, StickyNote, StickyNoteContent } from '../../types/stickyNote'
 import ClockContent from './clock/ClockContent'
 import GithubProfileContent from './github/GithubProfileContent'
+import GithubRepoContent from './github/GithubRepoContent'
 import PokemonContent from './pokemon/PokemonContent'
 import WeatherContent from './weather/WeatherContent'
 
@@ -149,6 +150,15 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
             columns={note.columns}
             rows={note.rows}
             onChangeContent={onChangeContent}
+          />
+        ) : note.content.kind === 'githubRepo' ? (
+          // La clé recharge les données quand on change de dépôt.
+          <GithubRepoContent
+            key={note.content.repository}
+            noteId={note.id}
+            repository={note.content.repository}
+            columns={note.columns}
+            rows={note.rows}
           />
         ) : note.content.kind === 'githubProfile' ? (
           <GithubProfileContent
