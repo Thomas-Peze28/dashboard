@@ -34,6 +34,11 @@ tags:
       These widgets call the GitHub API with the token of the user's linked GitHub account (sign in with GitHub first).
       The `#widget_name` suffix only identifies the widget in this documentation: it is not sent to the server.
 
+  - name: Widget - Pokémon
+    description: |
+      Data returned by `GET /api/widgets/{id}/data` for the widgets of the **pokemon** service (TCGdex, cards in French, English, German, Spanish, Italian, Portuguese, Japanese or Korean).
+      The `#widget_name` suffix only identifies the widget in this documentation: it is not sent to the server.
+
 components:
   securitySchemes:
     BearerAuth:
@@ -484,6 +489,22 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GithubNotification'
+
+    PokemonCardData:
+      type: object
+      required: [id, name, image]
+      properties:
+        id:
+          type: string
+          description: TCGdex card ID
+          example: base1-4
+        name:
+          type: string
+          example: Dracaufeu
+        image:
+          type: string
+          description: High quality image of the card
+          example: https://assets.tcgdex.net/fr/base/base1/4/high.webp
 
   parameters:
     UserWidgetId:
@@ -963,7 +984,7 @@ paths:
                 required: [data]
                 properties:
                   data:
-                    description: Depends on the widget type, see the "Widget - Clock", "Widget - Weather" and "Widget - GitHub" sections
+                    description: Depends on the widget type, see the "Widget - Clock", "Widget - Weather", "Widget - GitHub" and "Widget - Pokémon" sections
                     oneOf:
                       - $ref: '#/components/schemas/ClockData'
                       - $ref: '#/components/schemas/WeatherCurrentData'
@@ -971,8 +992,9 @@ paths:
                       - $ref: '#/components/schemas/GithubRepoData'
                       - $ref: '#/components/schemas/GithubProfileData'
                       - $ref: '#/components/schemas/GithubNotificationsData'
+                      - $ref: '#/components/schemas/PokemonCardData'
         '400':
-          description: Widget ID is missing, or the widget configuration is invalid (ex. city or repository not found)
+          description: Widget ID is missing, or the widget configuration is invalid (ex. city, repository or Pokémon card not found)
           content:
             application/json:
               schema:
@@ -1350,3 +1372,84 @@ paths:
                 $ref: '#/components/schemas/Error'
               example:
                 error: External service unavailable.
+
+  '/api/widgets/{id}/data#pokemon_random_card':
+    get:
+      summary: A random Pokémon card
+      description: |
+        Configuration (`config` of the UserWidget): `{ "language": "en" }` (`fr`, `en`, `de`, `es`, `it`, `pt`, `ja` or `ko`, French by default).
+        A new card is drawn on each call, among the cards that have an image in this language (502 if none is found after 5 draws).
+      operationId: getWidgetData_pokemon_random_card
+      tags: ['Widget - Pokémon']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PokemonCardData'
+        '502':
+          description: TCGdex is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: External service unavailable.
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget not found for the authenticated user
+
+  '/api/widgets/{id}/data#pokemon_card':
+    get:
+      summary: A Pokémon card chosen by the user
+      description: |
+        Configuration (`config` of the UserWidget): `{ "name": "Charizard", "language": "en" }` (`fr`, `en`, `de`, `es`, `it`, `pt`, `ja` or `ko`, French by default).
+        The name must be written in the card language (ex: Dracaufeu in French, Charizard in English).
+        TCGdex matches partial names: a card with the exact name is preferred, otherwise the first matching card that has an image is displayed.
+      operationId: getWidgetData_pokemon_card
+      tags: ['Widget - Pokémon']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PokemonCardData'
+        '400':
+          description: name is missing or no card matches it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Pokémon card not found.
+        '502':
+          description: TCGdex is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: External service unavailable.
+        '401':
+          description: Authentication is required or the token is invalid
+        '404':
+          description: Widget not found for the authenticated user
