@@ -3,6 +3,7 @@ import liegeImage from '../../assets/liege.jpg'
 import { gridColumns, gridRows } from '../../constants/grid'
 import { useStickyNotes } from '../../hooks/useStickyNotes'
 import type { GridPosition, StickyNoteContent, StickyNoteSize } from '../../types/stickyNote'
+import { needsGithubLogin, redirectToGithubLogin } from './github/githubShared'
 import GridCell from './GridCell'
 import LogoutButton from './LogoutButton'
 import StickyNoteCard from './StickyNoteCard'
@@ -36,9 +37,19 @@ function Dashboard() {
     setPendingSize(null)
   }
 
+  // Un widget GitHub sans compte relié envoie directement vers la connexion GitHub.
+  const connectGithubIfNeeded = async (noteId: string, content: StickyNoteContent) => {
+    if (content.kind === 'githubProfile' && (await needsGithubLogin(noteId))) redirectToGithubLogin()
+  }
+
   const handleSelectContent = async (content: StickyNoteContent) => {
     if (!pendingCell || !pendingSize) return
-    if (await addStickyNote(pendingCell, pendingSize, content)) closeDialog()
+    const createdNote = await addStickyNote(pendingCell, pendingSize, content)
+
+    if (!createdNote) return
+
+    closeDialog()
+    await connectGithubIfNeeded(createdNote.id, content)
   }
 
   const editedNote = editState ? stickyNotes.find((note) => note.id === editState.noteId) : undefined
@@ -145,7 +156,10 @@ function Dashboard() {
           submitLabel="Enregistrer"
           isSaving={isSavingStickyNote}
           onSelect={async (content) => {
-            if (await changeStickyNoteWidget(editedNote.id, content)) closeEdit()
+            if (!(await changeStickyNoteWidget(editedNote.id, content))) return
+
+            closeEdit()
+            await connectGithubIfNeeded(editedNote.id, content)
           }}
           onBack={backToEditMenu}
           onClose={closeEdit}

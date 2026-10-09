@@ -16,6 +16,7 @@ const catalogNames: Record<StickyNoteContentKind, string> = {
   weatherForecast: 'weather_forecast',
   pokemonRandom: 'pokemon_random_card',
   pokemonCard: 'pokemon_card',
+  githubProfile: 'github_profile',
 }
 
 export type StickyNoteWidgetIds = Record<StickyNoteContentKind, string>
@@ -40,6 +41,8 @@ function toContent(widgetName: string, config: Record<string, unknown> | null): 
   if (widgetName === catalogNames.clock) {
     return { kind: 'clock', timezone: isValidTimezone(config?.timezone) ? config.timezone : 'UTC' }
   }
+  if (widgetName === catalogNames.githubProfile) return { kind: 'githubProfile' }
+
   const language = isPokemonLanguage(config?.language) ? config.language : defaultPokemonLanguage
 
   if (widgetName === catalogNames.pokemonRandom) return { kind: 'pokemonRandom', language }
@@ -76,6 +79,8 @@ function toConfig(content: StickyNoteContent) {
       return { city: content.city, days: content.days }
     case 'pokemonRandom':
       return { language: content.language }
+    case 'githubProfile':
+      return {}
     case 'pokemonCard':
       return content.cardId
         ? { id: content.cardId, name: content.name, language: content.language }
@@ -125,6 +130,7 @@ export async function fetchStickyNotes(): Promise<{ widgetIds: StickyNoteWidgetI
       weatherForecast: findWidgetId(catalogNames.weatherForecast),
       pokemonRandom: findWidgetId(catalogNames.pokemonRandom),
       pokemonCard: findWidgetId(catalogNames.pokemonCard),
+      githubProfile: findWidgetId(catalogNames.githubProfile),
     },
     notes: widgetsData.widgets.flatMap((widget) => {
       const content = toContent(widget.widget.name, widget.config)

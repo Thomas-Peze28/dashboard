@@ -15,6 +15,8 @@ export type StickyNoteContent =
   | { kind: 'weatherCurrent'; city: string }
   | { kind: 'weatherForecast'; city: string; days: number }
   | { kind: 'pokemonRandom'; language: PokemonLanguage }
+  // Profil du compte GitHub relié à l'utilisateur.
+  | { kind: 'githubProfile' }
   // Avec cardId : carte exacte gardée en favori. Sans : carte cherchée par son nom.
   | { kind: 'pokemonCard'; language: PokemonLanguage; name: string; cardId?: string }
 

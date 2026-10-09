@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Clock, CloudSun, Dices, Search, X } from 'lucide-react'
+import { ArrowLeft, CircleUser, Clock, CloudSun, Dices, Search, X } from 'lucide-react'
 import { defaultPokemonLanguage } from '../../constants/pokemon'
 import { localTimezone } from '../../constants/timezones'
 import { defaultForecastDays, getMaxForecastDays } from '../../constants/weather'
@@ -19,13 +19,14 @@ type StickyNoteContentDialogProps = {
   onClose: () => void
 }
 
-type WidgetChoice = 'clock' | 'weather' | 'pokemon' | 'pokemonCard'
+type WidgetChoice = 'clock' | 'weather' | 'pokemon' | 'pokemonCard' | 'githubProfile'
 
 const widgetChoices: Array<{ widget: WidgetChoice; label: string; icon: typeof Clock }> = [
   { widget: 'clock', label: 'Horloge', icon: Clock },
   { widget: 'weather', label: 'Météo', icon: CloudSun },
   { widget: 'pokemon', label: 'Pokémon aléatoire', icon: Dices },
   { widget: 'pokemonCard', label: 'Carte Pokémon', icon: Search },
+  { widget: 'githubProfile', label: 'Profil GitHub', icon: CircleUser },
 ]
 
 function StickyNoteContentDialog({
@@ -44,6 +45,7 @@ function StickyNoteContentDialog({
     if (initialContent.kind === 'pokemonRandom') return 'pokemon'
     // Une carte gardée en favori vient du tirage aléatoire.
     if (initialContent.kind === 'pokemonCard') return initialContent.cardId ? 'pokemon' : 'pokemonCard'
+    if (initialContent.kind === 'githubProfile') return 'githubProfile'
     return 'weather'
   })
   const [timezone, setTimezone] = useState(
@@ -81,6 +83,7 @@ function StickyNoteContentDialog({
 
     if (widget === 'clock') onSelect({ kind: 'clock', timezone })
     else if (widget === 'pokemon') onSelect({ kind: 'pokemonRandom', language })
+    else if (widget === 'githubProfile') onSelect({ kind: 'githubProfile' })
     else if (widget === 'pokemonCard') onSelect({ kind: 'pokemonCard', language, name: pokemonName.trim() })
     else if (weatherMode === 'current') onSelect({ kind: 'weatherCurrent', city: city.trim() })
     else onSelect({ kind: 'weatherForecast', city: city.trim(), days })
@@ -118,7 +121,7 @@ function StickyNoteContentDialog({
           </button>
         </header>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {widgetChoices.map((choice) => {
             const Icon = choice.icon
             const isSelected = choice.widget === widget
@@ -144,6 +147,11 @@ function StickyNoteContentDialog({
           <TimezonePicker value={timezone} onChange={setTimezone} />
         ) : widget === 'pokemon' ? (
           <PokemonLanguagePicker value={language} onChange={setLanguage} />
+        ) : widget === 'githubProfile' ? (
+          <p className="mt-4 text-sm text-gray-600">
+            Affiche votre profil GitHub. Si votre compte GitHub n’est pas encore relié, vous serez redirigé vers
+            GitHub pour vous connecter.
+          </p>
         ) : widget === 'pokemonCard' ? (
           <>
             <label htmlFor="pokemon-name" className="mt-4 block text-sm font-medium text-gray-800">

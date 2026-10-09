@@ -4,6 +4,7 @@ import pinImage from '../../assets/pin.png'
 import { gridColumns, gridRows } from '../../constants/grid'
 import type { GridPosition, StickyNote, StickyNoteContent } from '../../types/stickyNote'
 import ClockContent from './clock/ClockContent'
+import GithubProfileContent from './github/GithubProfileContent'
 import PokemonContent from './pokemon/PokemonContent'
 import WeatherContent from './weather/WeatherContent'
 
@@ -50,8 +51,8 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (isDeleting || event.button !== 0) return
-    // Les boutons posés sur le post-it gardent leur propre clic.
-    if ((event.target as HTMLElement).closest('button')) return
+    // Les boutons et les liens posés sur le post-it gardent leur propre clic.
+    if ((event.target as HTMLElement).closest('button, a')) return
 
     const grid = event.currentTarget.closest('[data-dashboard-grid]')
     if (!grid) return
@@ -148,6 +149,12 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
             columns={note.columns}
             rows={note.rows}
             onChangeContent={onChangeContent}
+          />
+        ) : note.content.kind === 'githubProfile' ? (
+          <GithubProfileContent
+            noteId={note.id}
+            columns={note.columns}
+            rows={note.rows}
           />
         ) : (
           // La clé force un rechargement des données quand la ville ou le nombre de jours change.

@@ -69,9 +69,9 @@ export function useStickyNotes() {
     )
   }
 
-  // Renvoie true si le post-it a bien été enregistré.
+  // Renvoie le post-it créé, ou null si l'enregistrement a échoué.
   const addStickyNote = async (position: GridPosition, size: StickyNoteSize, content: StickyNoteContent) => {
-    if (!stickyNoteWidgetIds || !canPlaceStickyNote(position, size)) return false
+    if (!stickyNoteWidgetIds || !canPlaceStickyNote(position, size)) return null
 
     setIsSavingStickyNote(true)
     setDashboardError('')
@@ -79,10 +79,10 @@ export function useStickyNotes() {
     try {
       const createdNote = await createStickyNote(stickyNoteWidgetIds, position, size, content)
       setStickyNotes((current) => [...current, createdNote])
-      return true
+      return createdNote
     } catch (error) {
       setDashboardError(error instanceof Error ? error.message : 'Impossible d’enregistrer le post-it.')
-      return false
+      return null
     } finally {
       setIsSavingStickyNote(false)
     }
