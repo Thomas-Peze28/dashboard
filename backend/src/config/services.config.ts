@@ -128,7 +128,7 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
                     {
                         name: 'language',
                         type: 'string',
-                        description: 'Card language: fr, en, de, es, it, pt, ja or ko (fr by default)',
+                        description: 'Card language: fr, en, de, es, it, pt or ja (fr by default)',
                     },
                 ],
             },
@@ -144,7 +144,29 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
                     {
                         name: 'language',
                         type: 'string',
-                        description: 'Card language: fr, en, de, es, it, pt, ja or ko (fr by default)',
+                        description: 'Card language: fr, en, de, es, it, pt or ja (fr by default)',
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        name: 'gmail',
+        description: "Follow your Gmail inbox (requires a linked Google account).",
+        widgets: [
+            {
+                name: 'gmail_unread_count',
+                description: "Number of unread messages in your inbox.",
+                params: [],
+            },
+            {
+                name: 'gmail_recent_threads',
+                description: "Senders and subjects of the last e-mails received in your inbox.",
+                params: [
+                    {
+                        name: 'limit',
+                        type: 'integer',
+                        description: 'Number of e-mails to display (1 to 20, 5 by default)',
                     },
                 ],
             },

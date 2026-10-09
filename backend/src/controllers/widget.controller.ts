@@ -159,6 +159,10 @@ const WIDGET_DATA_ERRORS: Record<string, { status: number; message: string }> = 
     GITHUB_TOKEN_INVALID: { status: 403, message: 'GitHub token expired or revoked. Please sign in with GitHub again.' },
     GITHUB_FORBIDDEN: { status: 403, message: 'Missing GitHub permissions. Please sign in with GitHub again.' },
     GITHUB_RATE_LIMITED: { status: 429, message: 'GitHub rate limit reached. Please try again later.' },
+    GOOGLE_NOT_LINKED: { status: 403, message: 'No Google account linked. Please sign in with Google.' },
+    GOOGLE_TOKEN_INVALID: { status: 403, message: 'Google token expired or revoked. Please sign in with Google again.' },
+    GOOGLE_FORBIDDEN: { status: 403, message: 'Missing Google permissions. Please sign in with Google again.' },
+    GOOGLE_RATE_LIMITED: { status: 429, message: 'Google rate limit reached. Please try again later.' },
     POKEMON_CARD_NOT_FOUND: { status: 400, message: 'Pokémon card not found.' },
     UPSTREAM_ERROR: { status: 502, message: 'External service unavailable.' },
 };

@@ -6,6 +6,8 @@ import { getGithubProfile } from './github/profile.js';
 import { getGithubNotifications } from './github/notifications.js';
 import { getRandomPokemonCard } from './pokemon/random.js';
 import { getPokemonCard } from './pokemon/card.js';
+import { getGmailUnreadCount } from './gmail/unreadCount.js';
+import { getGmailRecentThreads } from './gmail/recentThreads.js';
 
 /**
 * A widget handler receives the widget configuration and the ID of the user who owns it.
@@ -26,6 +28,8 @@ const WIDGET_HANDLERS: Record<string, WidgetHandler> = {
     github_notifications: getGithubNotifications,
     pokemon_random_card: getRandomPokemonCard,
     pokemon_card: getPokemonCard,
+    gmail_unread_count: getGmailUnreadCount,
+    gmail_recent_threads: getGmailRecentThreads,
 };
 
 /**
