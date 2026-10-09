@@ -1,7 +1,7 @@
 import { GMAIL_API_URL, getGoogleToken, googleFetch } from '../google/googleApi.js';
 
 const DEFAULT_LIMIT = 5;
-const MAX_LIMIT = 10;
+const MAX_LIMIT = 20;
 
 /**
 * The response from the Gmail messages list API.
