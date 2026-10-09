@@ -100,7 +100,7 @@ describe('Pokémon widgets Integration Tests', () => {
     });
 
     it('GET /api/widgets/:id/data - pokemon_card devrait renvoyer la carte choisie', async () => {
-        const fetchMock = mockTcgdex({ body: SEARCH_RESULTS });
+        const fetchMock = mockTcgdex({ body: SEARCH_RESULTS }, { body: { ...CHARIZARD, hp: 120 } });
 
         const res = await request(app)
             .get(`/api/widgets/${cardWidgetId}/data`)
@@ -108,12 +108,15 @@ describe('Pokémon widgets Integration Tests', () => {
 
         expect(res.status).toBe(200);
         // La carte au nom exact et illustrée est préférée à « Dracaufeu GX », pourtant en tête des résultats.
-        expect(res.body.data).toEqual({
+        expect(res.body.data).toMatchObject({
             id: 'base1-4',
             name: 'Dracaufeu',
             image: 'https://assets.tcgdex.net/fr/base/base1/4/high.webp',
+            hp: 120,
         });
-        expect(fetchMock).toHaveBeenCalledTimes(1);
+        // Un second appel récupère les détails de la carte trouvée.
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(String(fetchMock.mock.calls[1]?.[0])).toBe('https://api.tcgdex.net/v2/fr/cards/base1-4');
 
         const searchUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
         expect(searchUrl.pathname).toBe('/v2/fr/cards');

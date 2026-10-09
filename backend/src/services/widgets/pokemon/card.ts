@@ -29,5 +29,8 @@ export const getPokemonCard = async (config: Record<string, unknown>) => {
     if (!card) {
         throw new Error('POKEMON_CARD_NOT_FOUND');
     }
-    return toCardData(card);
+
+    const fullCard = await fetchCardById(card.id, getLanguageFromConfig(config)).catch(() => null);
+
+    return { ...toCardData(card), ...toCardDetails(fullCard ?? card) };
 };

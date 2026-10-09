@@ -1639,7 +1639,8 @@ paths:
         Configuration (`config` of the UserWidget): `{ "name": "Charizard", "language": "en" }` (`fr`, `en`, `de`, `es`, `it`, `pt` or `ja`, French by default).
         The name must be written in the card language (ex: Dracaufeu in French, Charizard in English).
         TCGdex matches partial names: a card with the exact name is preferred, otherwise the first matching card that has an image is displayed.
-        To keep one exact card, send its TCGdex ID instead: `{ "id": "base1-4", "language": "fr" }`. The name is then ignored and the response also contains the card details (`PokemonRandomCardData`).
+        To keep one exact card, send its TCGdex ID instead: `{ "id": "base1-4", "language": "fr" }`. The name is then ignored.
+        In both cases the response contains the card details, read from the full TCGdex card (they are null if this second call fails).
       operationId: getWidgetData_pokemon_card
       tags: ['Widget - Pokémon']
       security:
@@ -1656,7 +1657,7 @@ paths:
                 required: [data]
                 properties:
                   data:
-                    $ref: '#/components/schemas/PokemonCardData'
+                    $ref: '#/components/schemas/PokemonRandomCardData'
         '400':
           description: name is missing or no card matches it
           content:
