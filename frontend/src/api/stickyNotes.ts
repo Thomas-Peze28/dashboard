@@ -1,6 +1,7 @@
 import { defaultPokemonLanguage, isPokemonLanguage } from '../constants/pokemon'
 import { isValidTimezone } from '../constants/timezones'
 import { githubNotificationsLimit } from '../constants/github'
+import { gmailRecentLimit } from '../constants/gmail'
 import { clampForecastDays, defaultCity, defaultForecastDays } from '../constants/weather'
 import type {
   GridPosition,
@@ -20,6 +21,8 @@ const catalogNames: Record<StickyNoteContentKind, string> = {
   githubProfile: 'github_profile',
   githubRepo: 'github_repo',
   githubNotifications: 'github_notifications',
+  gmailUnread: 'gmail_unread_count',
+  gmailRecent: 'gmail_recent_threads',
 }
 
 export type StickyNoteWidgetIds = Record<StickyNoteContentKind, string>
@@ -46,6 +49,8 @@ function toContent(widgetName: string, config: Record<string, unknown> | null): 
   }
   if (widgetName === catalogNames.githubProfile) return { kind: 'githubProfile' }
   if (widgetName === catalogNames.githubNotifications) return { kind: 'githubNotifications' }
+  if (widgetName === catalogNames.gmailUnread) return { kind: 'gmailUnread' }
+  if (widgetName === catalogNames.gmailRecent) return { kind: 'gmailRecent' }
   if (widgetName === catalogNames.githubRepo) {
     return { kind: 'githubRepo', repository: typeof config?.repository === 'string' ? config.repository : '' }
   }
@@ -87,7 +92,10 @@ function toConfig(content: StickyNoteContent) {
     case 'pokemonRandom':
       return { language: content.language }
     case 'githubProfile':
+    case 'gmailUnread':
       return {}
+    case 'gmailRecent':
+      return { limit: gmailRecentLimit }
     case 'githubNotifications':
       return { limit: githubNotificationsLimit }
     case 'githubRepo':
@@ -144,6 +152,8 @@ export async function fetchStickyNotes(): Promise<{ widgetIds: StickyNoteWidgetI
       githubProfile: findWidgetId(catalogNames.githubProfile),
       githubRepo: findWidgetId(catalogNames.githubRepo),
       githubNotifications: findWidgetId(catalogNames.githubNotifications),
+      gmailUnread: findWidgetId(catalogNames.gmailUnread),
+      gmailRecent: findWidgetId(catalogNames.gmailRecent),
     },
     notes: widgetsData.widgets.flatMap((widget) => {
       const content = toContent(widget.widget.name, widget.config)

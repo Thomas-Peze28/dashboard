@@ -1,11 +1,10 @@
 import { Bell, CircleDot, GitCommitHorizontal, GitPullRequest, MessageSquare, Tag } from 'lucide-react'
 import { githubNotificationsLimit } from '../../../constants/github'
 import { useStickyNoteData } from '../../../hooks/useStickyNoteData'
-import { GithubPlaceholder } from './GithubParts'
+import { isLoginRequired, loginLabels, redirectToLogin } from '../accountLink'
+import WidgetPlaceholder from '../WidgetPlaceholder'
 import {
   describeGithubError,
-  isGithubLoginRequired,
-  redirectToGithubLogin,
 } from './githubShared'
 
 type GithubNotificationsContentProps = {
@@ -88,11 +87,12 @@ function GithubNotificationsContent({ noteId, columns, rows }: GithubNotificatio
 
   if (!data) {
     return (
-      <GithubPlaceholder
+      <WidgetPlaceholder
         title="Notifications GitHub"
         message={error === null ? 'Chargement...' : describeGithubError(error, 'Notifications introuvables')}
         isError={error !== null}
-        onLogin={isGithubLoginRequired(error) ? redirectToGithubLogin : undefined}
+        loginLabel={loginLabels.github}
+        onLogin={isLoginRequired('github', error) ? () => redirectToLogin('github') : undefined}
       />
     )
   }

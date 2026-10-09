@@ -1,11 +1,11 @@
 import { CircleDot, Code, Eye, GitBranch, GitFork, History, Link, Lock, Star } from 'lucide-react'
 import { useStickyNoteData } from '../../../hooks/useStickyNoteData'
-import { GithubDetails, GithubPlaceholder, GithubStats, type GithubDetail, type GithubStat } from './GithubParts'
+import { isLoginRequired, loginLabels, redirectToLogin } from '../accountLink'
+import WidgetPlaceholder from '../WidgetPlaceholder'
+import { GithubDetails, GithubStats, type GithubDetail, type GithubStat } from './GithubParts'
 import {
   describeGithubError,
   githubRefreshDelay,
-  isGithubLoginRequired,
-  redirectToGithubLogin,
 } from './githubShared'
 
 type GithubRepoContentProps = {
@@ -37,11 +37,12 @@ function GithubRepoContent({ noteId, repository, columns, rows }: GithubRepoCont
 
   if (!repo) {
     return (
-      <GithubPlaceholder
+      <WidgetPlaceholder
         title={repository}
         message={error === null ? 'Chargement...' : describeGithubError(error, 'Dépôt introuvable')}
         isError={error !== null}
-        onLogin={isGithubLoginRequired(error) ? redirectToGithubLogin : undefined}
+        loginLabel={loginLabels.github}
+        onLogin={isLoginRequired('github', error) ? () => redirectToLogin('github') : undefined}
       />
     )
   }

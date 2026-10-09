@@ -7,6 +7,8 @@ import ClockContent from './clock/ClockContent'
 import GithubNotificationsContent from './github/GithubNotificationsContent'
 import GithubProfileContent from './github/GithubProfileContent'
 import GithubRepoContent from './github/GithubRepoContent'
+import GmailRecentContent from './gmail/GmailRecentContent'
+import GmailUnreadContent from './gmail/GmailUnreadContent'
 import PokemonContent from './pokemon/PokemonContent'
 import WeatherContent from './weather/WeatherContent'
 
@@ -152,6 +154,10 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
             rows={note.rows}
             onChangeContent={onChangeContent}
           />
+        ) : note.content.kind === 'gmailRecent' ? (
+          <GmailRecentContent noteId={note.id} columns={note.columns} rows={note.rows} />
+        ) : note.content.kind === 'gmailUnread' ? (
+          <GmailUnreadContent noteId={note.id} columns={note.columns} rows={note.rows} />
         ) : note.content.kind === 'githubNotifications' ? (
           <GithubNotificationsContent noteId={note.id} columns={note.columns} rows={note.rows} />
         ) : note.content.kind === 'githubRepo' ? (

@@ -3,7 +3,7 @@ import liegeImage from '../../assets/liege.jpg'
 import { gridColumns, gridRows } from '../../constants/grid'
 import { useStickyNotes } from '../../hooks/useStickyNotes'
 import type { GridPosition, StickyNoteContent, StickyNoteSize } from '../../types/stickyNote'
-import { needsGithubLogin, redirectToGithubLogin } from './github/githubShared'
+import { getAccountProvider, needsLogin, redirectToLogin } from './accountLink'
 import GridCell from './GridCell'
 import LogoutButton from './LogoutButton'
 import StickyNoteCard from './StickyNoteCard'
@@ -38,10 +38,10 @@ function Dashboard() {
   }
 
   // Un widget GitHub sans compte relié envoie directement vers la connexion GitHub.
-  const connectGithubIfNeeded = async (noteId: string, content: StickyNoteContent) => {
-    const isGithubWidget = content.kind.startsWith('github')
+  const connectAccountIfNeeded = async (noteId: string, content: StickyNoteContent) => {
+    const provider = getAccountProvider(content)
 
-    if (isGithubWidget && (await needsGithubLogin(noteId))) redirectToGithubLogin()
+    if (provider && (await needsLogin(provider, noteId))) redirectToLogin(provider)
   }
 
   const handleSelectContent = async (content: StickyNoteContent) => {
@@ -51,7 +51,7 @@ function Dashboard() {
     if (!createdNote) return
 
     closeDialog()
-    await connectGithubIfNeeded(createdNote.id, content)
+    await connectAccountIfNeeded(createdNote.id, content)
   }
 
   const editedNote = editState ? stickyNotes.find((note) => note.id === editState.noteId) : undefined
@@ -161,7 +161,7 @@ function Dashboard() {
             if (!(await changeStickyNoteWidget(editedNote.id, content))) return
 
             closeEdit()
-            await connectGithubIfNeeded(editedNote.id, content)
+            await connectAccountIfNeeded(editedNote.id, content)
           }}
           onBack={backToEditMenu}
           onClose={closeEdit}

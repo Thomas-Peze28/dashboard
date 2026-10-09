@@ -1,6 +1,3 @@
-import { apiBaseUrl } from '../../../api/client'
-import { fetchStickyNoteData } from '../../../api/stickyNotes'
-
 export const githubRefreshDelay = 10 * 60 * 1000
 
 const errorLabels: Record<string, string> = {
@@ -9,27 +6,6 @@ const errorLabels: Record<string, string> = {
   'Missing GitHub permissions. Please sign in with GitHub again.': 'Reconnectez-vous avec GitHub',
   'GitHub rate limit reached. Please try again later.': 'Limite GitHub atteinte, réessayez plus tard',
   'Invalid widget configuration.': 'Configuration invalide',
-}
-
-const loginRequiredErrors = [
-  'No GitHub account linked. Please sign in with GitHub.',
-  'GitHub token expired or revoked. Please sign in with GitHub again.',
-  'Missing GitHub permissions. Please sign in with GitHub again.',
-]
-
-export const isGithubLoginRequired = (error: string | null) => error !== null && loginRequiredErrors.includes(error)
-
-export const redirectToGithubLogin = () => {
-  window.location.href = `${apiBaseUrl}/api/auth/github`
-}
-
-export async function needsGithubLogin(noteId: string) {
-  try {
-    await fetchStickyNoteData(noteId)
-    return false
-  } catch (error) {
-    return isGithubLoginRequired(error instanceof Error ? error.message : null)
-  }
 }
 
 export const describeGithubError = (error: string, notFoundLabel: string) =>

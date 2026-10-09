@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Clock, CloudSun, Dices, GitBranch, Search, X } from 'lucide-react'
+import { ArrowLeft, Clock, CloudSun, Dices, GitBranch, Mail, Search, X } from 'lucide-react'
 import { defaultPokemonLanguage } from '../../constants/pokemon'
 import { localTimezone } from '../../constants/timezones'
 import { defaultForecastDays, getMaxForecastDays } from '../../constants/weather'
 import type { StickyNoteContent, StickyNoteSize } from '../../types/stickyNote'
 import TimezonePicker from './clock/TimezonePicker'
 import GithubOptions, { type GithubMode } from './github/GithubOptions'
+import GmailOptions, { type GmailMode } from './gmail/GmailOptions'
 import PokemonLanguagePicker from './pokemon/PokemonLanguagePicker'
 import WeatherOptions, { type WeatherMode } from './weather/WeatherOptions'
 
@@ -20,7 +21,7 @@ type StickyNoteContentDialogProps = {
   onClose: () => void
 }
 
-type WidgetChoice = 'clock' | 'weather' | 'pokemon' | 'pokemonCard' | 'github'
+type WidgetChoice = 'clock' | 'weather' | 'pokemon' | 'pokemonCard' | 'github' | 'gmail'
 
 // Même format que celui attendu par le backend : propriétaire/dépôt.
 const repositoryPattern = /^[\w.-]+\/[\w.-]+$/
@@ -31,6 +32,7 @@ const widgetChoices: Array<{ widget: WidgetChoice; label: string; icon: typeof C
   { widget: 'pokemon', label: 'Pokémon aléatoire', icon: Dices },
   { widget: 'pokemonCard', label: 'Carte Pokémon', icon: Search },
   { widget: 'github', label: 'GitHub', icon: GitBranch },
+  { widget: 'gmail', label: 'Gmail', icon: Mail },
 ]
 
 function StickyNoteContentDialog({
@@ -50,6 +52,7 @@ function StickyNoteContentDialog({
     // Une carte gardée en favori vient du tirage aléatoire.
     if (initialContent.kind === 'pokemonCard') return initialContent.cardId ? 'pokemon' : 'pokemonCard'
     if (initialContent.kind === 'weatherCurrent' || initialContent.kind === 'weatherForecast') return 'weather'
+    if (initialContent.kind === 'gmailUnread' || initialContent.kind === 'gmailRecent') return 'gmail'
     return 'github'
   })
   const [timezone, setTimezone] = useState(
@@ -75,6 +78,7 @@ function StickyNoteContentDialog({
         ? 'notifications'
         : 'profile',
   )
+  const [gmailMode, setGmailMode] = useState<GmailMode>(initialContent?.kind === 'gmailRecent' ? 'recent' : 'unread')
   const [repository, setRepository] = useState(
     initialContent?.kind === 'githubRepo' ? initialContent.repository : '',
   )
@@ -98,6 +102,7 @@ function StickyNoteContentDialog({
 
     if (widget === 'clock') onSelect({ kind: 'clock', timezone })
     else if (widget === 'pokemon') onSelect({ kind: 'pokemonRandom', language })
+    else if (widget === 'gmail') onSelect({ kind: gmailMode === 'recent' ? 'gmailRecent' : 'gmailUnread' })
     else if (widget === 'github') {
       if (githubMode === 'profile') onSelect({ kind: 'githubProfile' })
       else if (githubMode === 'notifications') onSelect({ kind: 'githubNotifications' })
@@ -166,6 +171,8 @@ function StickyNoteContentDialog({
           <TimezonePicker value={timezone} onChange={setTimezone} />
         ) : widget === 'pokemon' ? (
           <PokemonLanguagePicker value={language} onChange={setLanguage} />
+        ) : widget === 'gmail' ? (
+          <GmailOptions mode={gmailMode} onModeChange={setGmailMode} />
         ) : widget === 'github' ? (
           <GithubOptions
             mode={githubMode}

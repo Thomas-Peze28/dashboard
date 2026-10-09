@@ -1,11 +1,11 @@
 import { BookMarked, Building2, CalendarDays, Link, MapPin, UserRoundCheck, Users } from 'lucide-react'
 import { useStickyNoteData } from '../../../hooks/useStickyNoteData'
-import { GithubDetails, GithubPlaceholder, GithubStats, type GithubDetail, type GithubStat } from './GithubParts'
+import { isLoginRequired, loginLabels, redirectToLogin } from '../accountLink'
+import WidgetPlaceholder from '../WidgetPlaceholder'
+import { GithubDetails, GithubStats, type GithubDetail, type GithubStat } from './GithubParts'
 import {
   describeGithubError,
   githubRefreshDelay,
-  isGithubLoginRequired,
-  redirectToGithubLogin,
 } from './githubShared'
 
 type GithubProfileContentProps = {
@@ -36,11 +36,12 @@ function GithubProfileContent({ noteId, columns, rows }: GithubProfileContentPro
 
   if (!profile) {
     return (
-      <GithubPlaceholder
+      <WidgetPlaceholder
         title="Profil GitHub"
         message={error === null ? 'Chargement...' : describeGithubError(error, 'Profil introuvable')}
         isError={error !== null}
-        onLogin={isGithubLoginRequired(error) ? redirectToGithubLogin : undefined}
+        loginLabel={loginLabels.github}
+        onLogin={isLoginRequired('github', error) ? () => redirectToLogin('github') : undefined}
       />
     )
   }
