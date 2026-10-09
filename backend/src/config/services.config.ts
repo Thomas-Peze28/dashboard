@@ -117,4 +117,37 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
             },
         ],
     },
+    {
+        name: 'pokemon',
+        description: "Display Pokémon Trading Card Game cards with TCGdex.",
+        widgets: [
+            {
+                name: 'pokemon_random_card',
+                description: "A random Pokémon card, renewed on each refresh.",
+                params: [
+                    {
+                        name: 'language',
+                        type: 'string',
+                        description: 'Card language: fr, en, de, es, it, pt, ja or ko (fr by default)',
+                    },
+                ],
+            },
+            {
+                name: 'pokemon_card',
+                description: "A Pokémon card chosen by the user.",
+                params: [
+                    {
+                        name: 'name',
+                        type: 'string',
+                        description: 'Card name, in the card language (ex: Dracaufeu in French, Charizard in English)',
+                    },
+                    {
+                        name: 'language',
+                        type: 'string',
+                        description: 'Card language: fr, en, de, es, it, pt, ja or ko (fr by default)',
+                    },
+                ],
+            },
+        ],
+    },
 ];

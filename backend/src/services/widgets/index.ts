@@ -4,6 +4,8 @@ import { getWeatherForecast } from './weather/forecast.js';
 import { getGithubRepo } from './github/repo.js';
 import { getGithubProfile } from './github/profile.js';
 import { getGithubNotifications } from './github/notifications.js';
+import { getRandomPokemonCard } from './pokemon/random.js';
+import { getPokemonCard } from './pokemon/card.js';
 
 /**
 * A widget handler receives the widget configuration and the ID of the user who owns it.
@@ -22,6 +24,8 @@ const WIDGET_HANDLERS: Record<string, WidgetHandler> = {
     github_repo: getGithubRepo,
     github_profile: getGithubProfile,
     github_notifications: getGithubNotifications,
+    pokemon_random_card: getRandomPokemonCard,
+    pokemon_card: getPokemonCard,
 };
 
 /**
