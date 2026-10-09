@@ -239,6 +239,7 @@ describe('Pokémon widgets Integration Tests', () => {
         expect(res.status).toBe(200);
         expect(res.body.data.id).toBe('base1-4');
         expect(res.body.data.image).toBe('https://assets.tcgdex.net/fr/base/base1/4/high.webp');
+        expect(res.body.data).toMatchObject({ category: null, hp: null, types: [], set: null });
         expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://api.tcgdex.net/v2/fr/random/card');
     });
 

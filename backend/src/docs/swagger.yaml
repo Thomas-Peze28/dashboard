@@ -567,6 +567,46 @@ components:
           description: High quality image of the card
           example: https://assets.tcgdex.net/fr/base/base1/4/high.webp
 
+    PokemonRandomCardData:
+      allOf:
+        - $ref: '#/components/schemas/PokemonCardData'
+        - type: object
+          description: Card details, written in the card language
+          required: [category, hp, types, stage, rarity, set, illustrator]
+          properties:
+            category:
+              type: string
+              nullable: true
+              example: Pokémon
+            hp:
+              type: integer
+              nullable: true
+              description: Missing for the cards that are not Pokémon
+              example: 120
+            types:
+              type: array
+              description: Empty for the cards that are not Pokémon
+              items:
+                type: string
+              example: [Feu]
+            stage:
+              type: string
+              nullable: true
+              example: Niveau 2
+            rarity:
+              type: string
+              nullable: true
+              example: Rare
+            set:
+              type: string
+              nullable: true
+              description: Name of the set the card belongs to
+              example: Set de Base
+            illustrator:
+              type: string
+              nullable: true
+              example: Mitsuhiro Arita
+
   parameters:
     UserWidgetId:
       name: id
@@ -1578,7 +1618,7 @@ paths:
                 required: [data]
                 properties:
                   data:
-                    $ref: '#/components/schemas/PokemonCardData'
+                    $ref: '#/components/schemas/PokemonRandomCardData'
         '502':
           description: TCGdex is unavailable
           content:

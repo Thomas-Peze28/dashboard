@@ -13,6 +13,13 @@ export interface TcgdexCard {
     id: string;
     name: string;
     image?: string;
+    category?: string;
+    hp?: number;
+    types?: string[];
+    stage?: string;
+    rarity?: string;
+    illustrator?: string;
+    set?: { name?: string };
 }
 
 /**
@@ -72,6 +79,22 @@ export const toCardData = (card: TcgdexCard) => ({
     id: card.id,
     name: card.name,
     image: `${card.image}/high.webp`,
+});
+
+/**
+* Extracts the details of a full TCGdex card. They are written in the card language,
+* and each one may be missing (ex: a Trainer card has no HP nor types).
+* @param card - The full TCGdex card (the search results do not include these fields).
+* @returns The card details sent to the client.
+**/
+export const toCardDetails = (card: TcgdexCard) => ({
+    category: card.category ?? null,
+    hp: card.hp ?? null,
+    types: card.types ?? [],
+    stage: card.stage ?? null,
+    rarity: card.rarity ?? null,
+    set: card.set?.name ?? null,
+    illustrator: card.illustrator ?? null,
 });
 
 /**
