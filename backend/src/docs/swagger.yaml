@@ -34,9 +34,15 @@ tags:
       These widgets call the GitHub API with the token of the user's linked GitHub account (sign in with GitHub first).
       The `#widget_name` suffix only identifies the widget in this documentation: it is not sent to the server.
 
+  - name: Widget - Gmail
+    description: |
+      Data returned by `GET /api/widgets/{id}/data` for the widgets of the **gmail** service.
+      These widgets call the Gmail API with the token of the user's linked Google account (sign in with Google first).
+      Only the `gmail.metadata` scope is requested: the widgets read labels and headers (sender, subject), never the content of the e-mails.
+      The `#widget_name` suffix only identifies the widget in this documentation: it is not sent to the server.
   - name: Widget - Pokémon
     description: |
-      Data returned by `GET /api/widgets/{id}/data` for the widgets of the **pokemon** service (TCGdex, cards in French, English, German, Spanish, Italian, Portuguese, Japanese or Korean).
+      Data returned by `GET /api/widgets/{id}/data` for the widgets of the **pokemon** service (TCGdex, cards in French, English, German, Spanish, Italian, Portuguese or Japanese).
       The `#widget_name` suffix only identifies the widget in this documentation: it is not sent to the server.
 
 components:
@@ -489,6 +495,61 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GithubNotification'
+
+    GmailUnreadCountData:
+      type: object
+      required: [unread]
+      properties:
+        unread:
+          type: integer
+          description: Number of unread messages in the inbox (INBOX label)
+          example: 12
+
+    GmailEmail:
+      type: object
+      required: [id, from, fromEmail, subject, date, unread, url]
+      properties:
+        id:
+          type: string
+          example: 192a4f1c3e8b7d21
+        from:
+          type: string
+          description: Sender name (the sender address when there is no name)
+          example: Jane Doe
+        fromEmail:
+          type: string
+          example: jane@example.com
+        subject:
+          type: string
+          description: Subject of the e-mail (empty string if there is none)
+          example: Weekly meeting
+        date:
+          type: string
+          format: date-time
+          description: Date the e-mail was received
+          example: '2026-10-09T08:15:00.000Z'
+        unread:
+          type: boolean
+          example: true
+        url:
+          type: string
+          format: uri
+          description: Conversation in the Gmail web interface
+          example: https://mail.google.com/mail/u/0/#inbox/192a4f1c3e8b7d21
+
+    GmailRecentThreadsData:
+      type: object
+      required: [count, emails]
+      properties:
+        count:
+          type: integer
+          description: Number of e-mails returned (limited by the `limit` parameter)
+          example: 5
+        emails:
+          type: array
+          description: Most recent first
+          items:
+            $ref: '#/components/schemas/GmailEmail'
 
     PokemonCardData:
       type: object
@@ -984,7 +1045,7 @@ paths:
                 required: [data]
                 properties:
                   data:
-                    description: Depends on the widget type, see the "Widget - Clock", "Widget - Weather", "Widget - GitHub" and "Widget - Pokémon" sections
+                    description: Depends on the widget type, see the "Widget - Clock", "Widget - Weather", "Widget - GitHub", "Widget - Gmail" and "Widget - Pokémon" sections
                     oneOf:
                       - $ref: '#/components/schemas/ClockData'
                       - $ref: '#/components/schemas/WeatherCurrentData'
@@ -992,6 +1053,8 @@ paths:
                       - $ref: '#/components/schemas/GithubRepoData'
                       - $ref: '#/components/schemas/GithubProfileData'
                       - $ref: '#/components/schemas/GithubNotificationsData'
+                      - $ref: '#/components/schemas/GmailUnreadCountData'
+                      - $ref: '#/components/schemas/GmailRecentThreadsData'
                       - $ref: '#/components/schemas/PokemonCardData'
         '400':
           description: Widget ID is missing, or the widget configuration is invalid (ex. city, repository or Pokémon card not found)
@@ -1002,13 +1065,13 @@ paths:
         '401':
           description: Authentication is required or the token is invalid
         '403':
-          description: The widget needs a linked third-party account (ex. GitHub) that is missing, expired, revoked or lacks permissions
+          description: The widget needs a linked third-party account (ex. GitHub, Google) that is missing, expired, revoked or lacks permissions
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '429':
-          description: The rate limit of the external API (ex. GitHub) is reached
+          description: The rate limit of the external API (ex. GitHub, Google) is reached
           content:
             application/json:
               schema:
@@ -1373,11 +1436,131 @@ paths:
               example:
                 error: External service unavailable.
 
+  '/api/widgets/{id}/data#gmail_unread_count':
+    get:
+      summary: Number of unread e-mails in the Gmail inbox
+      description: |
+        No configuration (`{}`). Requires a Google account linked to the user, signed in with the `gmail.metadata` scope.
+        The Google access token is refreshed automatically when it has expired.
+      operationId: getWidgetData_gmail_unread_count
+      tags: ['Widget - Gmail']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GmailUnreadCountData'
+        '401':
+          description: Authentication is required or the token is invalid
+        '403':
+          description: No Google account linked, or the Google token is revoked or lacks the gmail.metadata scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notLinked:
+                  value:
+                    error: No Google account linked. Please sign in with Google.
+                tokenInvalid:
+                  value:
+                    error: Google token expired or revoked. Please sign in with Google again.
+                forbidden:
+                  value:
+                    error: Missing Google permissions. Please sign in with Google again.
+        '404':
+          description: Widget not found for the authenticated user
+        '429':
+          description: Google rate limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Google rate limit reached. Please try again later.
+        '502':
+          description: Gmail is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: External service unavailable.
+
+  '/api/widgets/{id}/data#gmail_recent_threads':
+    get:
+      summary: Last e-mails received in the Gmail inbox
+      description: |
+        Configuration (`config` of the UserWidget): `{ "limit": 5 }` (5 by default, clamped between 1 and 20).
+        Requires a Google account linked to the user, signed in with the `gmail.metadata` scope.
+      operationId: getWidgetData_gmail_recent_threads
+      tags: ['Widget - Gmail']
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserWidgetId'
+      responses:
+        '200':
+          description: Widget data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GmailRecentThreadsData'
+        '401':
+          description: Authentication is required or the token is invalid
+        '403':
+          description: No Google account linked, or the Google token is revoked or lacks the gmail.metadata scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notLinked:
+                  value:
+                    error: No Google account linked. Please sign in with Google.
+                tokenInvalid:
+                  value:
+                    error: Google token expired or revoked. Please sign in with Google again.
+                forbidden:
+                  value:
+                    error: Missing Google permissions. Please sign in with Google again.
+        '404':
+          description: Widget not found for the authenticated user
+        '429':
+          description: Google rate limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Google rate limit reached. Please try again later.
+        '502':
+          description: Gmail is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: External service unavailable.
+
   '/api/widgets/{id}/data#pokemon_random_card':
     get:
       summary: A random Pokémon card
       description: |
-        Configuration (`config` of the UserWidget): `{ "language": "en" }` (`fr`, `en`, `de`, `es`, `it`, `pt`, `ja` or `ko`, French by default).
+        Configuration (`config` of the UserWidget): `{ "language": "en" }` (`fr`, `en`, `de`, `es`, `it`, `pt` or `ja`, French by default).
         A new card is drawn on each call, among the cards that have an image in this language (502 if none is found after 5 draws).
       operationId: getWidgetData_pokemon_random_card
       tags: ['Widget - Pokémon']
@@ -1413,7 +1596,7 @@ paths:
     get:
       summary: A Pokémon card chosen by the user
       description: |
-        Configuration (`config` of the UserWidget): `{ "name": "Charizard", "language": "en" }` (`fr`, `en`, `de`, `es`, `it`, `pt`, `ja` or `ko`, French by default).
+        Configuration (`config` of the UserWidget): `{ "name": "Charizard", "language": "en" }` (`fr`, `en`, `de`, `es`, `it`, `pt` or `ja`, French by default).
         The name must be written in the card language (ex: Dracaufeu in French, Charizard in English).
         TCGdex matches partial names: a card with the exact name is preferred, otherwise the first matching card that has an image is displayed.
       operationId: getWidgetData_pokemon_card
