@@ -4,6 +4,7 @@ import pinImage from '../../assets/pin.png'
 import { gridColumns, gridRows } from '../../constants/grid'
 import type { GridPosition, StickyNote, StickyNoteContent } from '../../types/stickyNote'
 import ClockContent from './clock/ClockContent'
+import GithubNotificationsContent from './github/GithubNotificationsContent'
 import GithubProfileContent from './github/GithubProfileContent'
 import GithubRepoContent from './github/GithubRepoContent'
 import PokemonContent from './pokemon/PokemonContent'
@@ -151,6 +152,8 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
             rows={note.rows}
             onChangeContent={onChangeContent}
           />
+        ) : note.content.kind === 'githubNotifications' ? (
+          <GithubNotificationsContent noteId={note.id} columns={note.columns} rows={note.rows} />
         ) : note.content.kind === 'githubRepo' ? (
           // La clé recharge les données quand on change de dépôt.
           <GithubRepoContent

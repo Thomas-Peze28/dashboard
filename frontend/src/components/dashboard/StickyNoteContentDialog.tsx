@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, BookMarked, CircleUser, Clock, CloudSun, Dices, Search, X } from 'lucide-react'
+import { ArrowLeft, Clock, CloudSun, Dices, GitBranch, Search, X } from 'lucide-react'
 import { defaultPokemonLanguage } from '../../constants/pokemon'
 import { localTimezone } from '../../constants/timezones'
 import { defaultForecastDays, getMaxForecastDays } from '../../constants/weather'
 import type { StickyNoteContent, StickyNoteSize } from '../../types/stickyNote'
 import TimezonePicker from './clock/TimezonePicker'
+import GithubOptions, { type GithubMode } from './github/GithubOptions'
 import PokemonLanguagePicker from './pokemon/PokemonLanguagePicker'
 import WeatherOptions, { type WeatherMode } from './weather/WeatherOptions'
 
@@ -19,7 +20,7 @@ type StickyNoteContentDialogProps = {
   onClose: () => void
 }
 
-type WidgetChoice = 'clock' | 'weather' | 'pokemon' | 'pokemonCard' | 'githubProfile' | 'githubRepo'
+type WidgetChoice = 'clock' | 'weather' | 'pokemon' | 'pokemonCard' | 'github'
 
 // Même format que celui attendu par le backend : propriétaire/dépôt.
 const repositoryPattern = /^[\w.-]+\/[\w.-]+$/
@@ -29,8 +30,7 @@ const widgetChoices: Array<{ widget: WidgetChoice; label: string; icon: typeof C
   { widget: 'weather', label: 'Météo', icon: CloudSun },
   { widget: 'pokemon', label: 'Pokémon aléatoire', icon: Dices },
   { widget: 'pokemonCard', label: 'Carte Pokémon', icon: Search },
-  { widget: 'githubProfile', label: 'Profil GitHub', icon: CircleUser },
-  { widget: 'githubRepo', label: 'Dépôt GitHub', icon: BookMarked },
+  { widget: 'github', label: 'GitHub', icon: GitBranch },
 ]
 
 function StickyNoteContentDialog({
@@ -49,9 +49,8 @@ function StickyNoteContentDialog({
     if (initialContent.kind === 'pokemonRandom') return 'pokemon'
     // Une carte gardée en favori vient du tirage aléatoire.
     if (initialContent.kind === 'pokemonCard') return initialContent.cardId ? 'pokemon' : 'pokemonCard'
-    if (initialContent.kind === 'githubProfile') return 'githubProfile'
-    if (initialContent.kind === 'githubRepo') return 'githubRepo'
-    return 'weather'
+    if (initialContent.kind === 'weatherCurrent' || initialContent.kind === 'weatherForecast') return 'weather'
+    return 'github'
   })
   const [timezone, setTimezone] = useState(
     initialContent?.kind === 'clock' ? initialContent.timezone : localTimezone,
@@ -69,12 +68,19 @@ function StickyNoteContentDialog({
   const [pokemonName, setPokemonName] = useState(
     initialContent?.kind === 'pokemonCard' && !initialContent.cardId ? initialContent.name : '',
   )
+  const [githubMode, setGithubMode] = useState<GithubMode>(
+    initialContent?.kind === 'githubRepo'
+      ? 'repo'
+      : initialContent?.kind === 'githubNotifications'
+        ? 'notifications'
+        : 'profile',
+  )
   const [repository, setRepository] = useState(
     initialContent?.kind === 'githubRepo' ? initialContent.repository : '',
   )
   const canSubmit =
     !isSaving &&
-    (widget !== 'githubRepo' || repositoryPattern.test(repository.trim())) &&
+    (widget !== 'github' || githubMode !== 'repo' || repositoryPattern.test(repository.trim())) &&
     (widget !== 'weather' || city.trim() !== '') &&
     (widget !== 'pokemonCard' || pokemonName.trim() !== '')
 
@@ -92,8 +98,11 @@ function StickyNoteContentDialog({
 
     if (widget === 'clock') onSelect({ kind: 'clock', timezone })
     else if (widget === 'pokemon') onSelect({ kind: 'pokemonRandom', language })
-    else if (widget === 'githubProfile') onSelect({ kind: 'githubProfile' })
-    else if (widget === 'githubRepo') onSelect({ kind: 'githubRepo', repository: repository.trim() })
+    else if (widget === 'github') {
+      if (githubMode === 'profile') onSelect({ kind: 'githubProfile' })
+      else if (githubMode === 'notifications') onSelect({ kind: 'githubNotifications' })
+      else onSelect({ kind: 'githubRepo', repository: repository.trim() })
+    }
     else if (widget === 'pokemonCard') onSelect({ kind: 'pokemonCard', language, name: pokemonName.trim() })
     else if (weatherMode === 'current') onSelect({ kind: 'weatherCurrent', city: city.trim() })
     else onSelect({ kind: 'weatherForecast', city: city.trim(), days })
@@ -157,34 +166,14 @@ function StickyNoteContentDialog({
           <TimezonePicker value={timezone} onChange={setTimezone} />
         ) : widget === 'pokemon' ? (
           <PokemonLanguagePicker value={language} onChange={setLanguage} />
-        ) : widget === 'githubRepo' ? (
-          <>
-            <label htmlFor="github-repository" className="mt-4 block text-sm font-medium text-gray-800">
-              Dépôt GitHub
-            </label>
-            <input
-              id="github-repository"
-              type="text"
-              value={repository}
-              autoFocus
-              autoComplete="off"
-              placeholder="facebook/react"
-              onChange={(event) => setRepository(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') handleSubmit()
-              }}
-              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Au format propriétaire/dépôt. Si votre compte GitHub n’est pas encore relié, vous serez redirigé vers
-              GitHub pour vous connecter.
-            </p>
-          </>
-        ) : widget === 'githubProfile' ? (
-          <p className="mt-4 text-sm text-gray-600">
-            Affiche votre profil GitHub. Si votre compte GitHub n’est pas encore relié, vous serez redirigé vers
-            GitHub pour vous connecter.
-          </p>
+        ) : widget === 'github' ? (
+          <GithubOptions
+            mode={githubMode}
+            repository={repository}
+            onModeChange={setGithubMode}
+            onRepositoryChange={setRepository}
+            onSubmit={handleSubmit}
+          />
         ) : widget === 'pokemonCard' ? (
           <>
             <label htmlFor="pokemon-name" className="mt-4 block text-sm font-medium text-gray-800">

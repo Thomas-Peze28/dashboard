@@ -1,5 +1,6 @@
 import { defaultPokemonLanguage, isPokemonLanguage } from '../constants/pokemon'
 import { isValidTimezone } from '../constants/timezones'
+import { githubNotificationsLimit } from '../constants/github'
 import { clampForecastDays, defaultCity, defaultForecastDays } from '../constants/weather'
 import type {
   GridPosition,
@@ -18,6 +19,7 @@ const catalogNames: Record<StickyNoteContentKind, string> = {
   pokemonCard: 'pokemon_card',
   githubProfile: 'github_profile',
   githubRepo: 'github_repo',
+  githubNotifications: 'github_notifications',
 }
 
 export type StickyNoteWidgetIds = Record<StickyNoteContentKind, string>
@@ -43,6 +45,7 @@ function toContent(widgetName: string, config: Record<string, unknown> | null): 
     return { kind: 'clock', timezone: isValidTimezone(config?.timezone) ? config.timezone : 'UTC' }
   }
   if (widgetName === catalogNames.githubProfile) return { kind: 'githubProfile' }
+  if (widgetName === catalogNames.githubNotifications) return { kind: 'githubNotifications' }
   if (widgetName === catalogNames.githubRepo) {
     return { kind: 'githubRepo', repository: typeof config?.repository === 'string' ? config.repository : '' }
   }
@@ -85,6 +88,8 @@ function toConfig(content: StickyNoteContent) {
       return { language: content.language }
     case 'githubProfile':
       return {}
+    case 'githubNotifications':
+      return { limit: githubNotificationsLimit }
     case 'githubRepo':
       return { repository: content.repository }
     case 'pokemonCard':
@@ -138,6 +143,7 @@ export async function fetchStickyNotes(): Promise<{ widgetIds: StickyNoteWidgetI
       pokemonCard: findWidgetId(catalogNames.pokemonCard),
       githubProfile: findWidgetId(catalogNames.githubProfile),
       githubRepo: findWidgetId(catalogNames.githubRepo),
+      githubNotifications: findWidgetId(catalogNames.githubNotifications),
     },
     notes: widgetsData.widgets.flatMap((widget) => {
       const content = toContent(widget.widget.name, widget.config)

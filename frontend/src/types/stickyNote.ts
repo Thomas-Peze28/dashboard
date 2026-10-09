@@ -19,6 +19,7 @@ export type StickyNoteContent =
   | { kind: 'githubProfile' }
   // repository au format propriétaire/dépôt (ex : facebook/react).
   | { kind: 'githubRepo'; repository: string }
+  | { kind: 'githubNotifications' }
   // Avec cardId : carte exacte gardée en favori. Sans : carte cherchée par son nom.
   | { kind: 'pokemonCard'; language: PokemonLanguage; name: string; cardId?: string }
 
