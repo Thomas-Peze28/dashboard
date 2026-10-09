@@ -7,7 +7,7 @@ import type { WeatherCurrentData, WeatherForecastData, WeatherSize } from './wea
 
 type WeatherContentProps = {
   noteId: string
-  content: Exclude<StickyNoteContent, { kind: 'clock' }>
+  content: Extract<StickyNoteContent, { kind: 'weatherCurrent' | 'weatherForecast' }>
   columns: number
   rows: number
 }

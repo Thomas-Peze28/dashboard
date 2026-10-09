@@ -2,8 +2,9 @@ import { useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
 import pinImage from '../../assets/pin.png'
 import { gridColumns, gridRows } from '../../constants/grid'
-import type { GridPosition, StickyNote } from '../../types/stickyNote'
+import type { GridPosition, StickyNote, StickyNoteContent } from '../../types/stickyNote'
 import ClockContent from './clock/ClockContent'
+import PokemonContent from './pokemon/PokemonContent'
 import WeatherContent from './weather/WeatherContent'
 
 type StickyNoteCardProps = {
@@ -12,6 +13,7 @@ type StickyNoteCardProps = {
   canMoveTo: (position: GridPosition) => boolean
   onMove: (position: GridPosition) => void
   onEdit: () => void
+  onChangeContent: (content: StickyNoteContent) => Promise<boolean>
 }
 
 type DragState = {
@@ -26,7 +28,7 @@ type DragState = {
 // En dessous de cette distance (en pixels), le geste compte comme un clic et non un déplacement.
 const clickTolerance = 5
 
-function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit }: StickyNoteCardProps) {
+function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeContent }: StickyNoteCardProps) {
   const [drag, setDrag] = useState<DragState | null>(null)
 
   const isMoving = drag !== null && Math.hypot(drag.offsetX, drag.offsetY) >= clickTolerance
@@ -48,6 +50,8 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit }: StickyN
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (isDeleting || event.button !== 0) return
+    // Les boutons posés sur le post-it gardent leur propre clic.
+    if ((event.target as HTMLElement).closest('button')) return
 
     const grid = event.currentTarget.closest('[data-dashboard-grid]')
     if (!grid) return
@@ -81,6 +85,7 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit }: StickyN
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
     if (isDeleting || (event.key !== 'Enter' && event.key !== ' ')) return
 
     event.preventDefault()
@@ -122,7 +127,7 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit }: StickyN
         className={`group/note relative rotate-[-1.5deg] touch-none select-none self-center justify-self-center rounded-sm bg-yellow-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${isDeleting ? 'opacity-60' : ''} ${
           isMoving
             ? 'z-30 cursor-grabbing shadow-[6px_14px_18px_rgba(45,30,10,0.45)]'
-            : 'z-10 cursor-pointer shadow-[2px_5px_8px_rgba(45,30,10,0.38)]'
+            : 'z-10 cursor-pointer hover:z-20 shadow-[2px_5px_8px_rgba(45,30,10,0.38)]'
         }`}
       >
         <img
@@ -134,6 +139,16 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit }: StickyN
         />
         {note.content.kind === 'clock' ? (
           <ClockContent timezone={note.content.timezone} columns={note.columns} rows={note.rows} />
+        ) : note.content.kind === 'pokemonRandom' || note.content.kind === 'pokemonCard' ? (
+          // La clé force le tirage d'une nouvelle carte quand la langue change.
+          <PokemonContent
+            key={note.content.language}
+            noteId={note.id}
+            content={note.content}
+            columns={note.columns}
+            rows={note.rows}
+            onChangeContent={onChangeContent}
+          />
         ) : (
           // La clé force un rechargement des données quand la ville ou le nombre de jours change.
           <WeatherContent

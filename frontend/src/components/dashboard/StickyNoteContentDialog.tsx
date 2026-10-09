@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Clock, CloudSun, X } from 'lucide-react'
+import { ArrowLeft, Clock, CloudSun, Dices, X } from 'lucide-react'
+import { defaultPokemonLanguage } from '../../constants/pokemon'
 import { localTimezone } from '../../constants/timezones'
 import { defaultForecastDays, getMaxForecastDays } from '../../constants/weather'
 import type { StickyNoteContent, StickyNoteSize } from '../../types/stickyNote'
 import TimezonePicker from './clock/TimezonePicker'
+import PokemonLanguagePicker from './pokemon/PokemonLanguagePicker'
 import WeatherOptions, { type WeatherMode } from './weather/WeatherOptions'
 
 type StickyNoteContentDialogProps = {
@@ -17,11 +19,12 @@ type StickyNoteContentDialogProps = {
   onClose: () => void
 }
 
-type WidgetChoice = 'clock' | 'weather'
+type WidgetChoice = 'clock' | 'weather' | 'pokemon'
 
 const widgetChoices: Array<{ widget: WidgetChoice; label: string; icon: typeof Clock }> = [
   { widget: 'clock', label: 'Horloge', icon: Clock },
   { widget: 'weather', label: 'Météo', icon: CloudSun },
+  { widget: 'pokemon', label: 'Pokémon aléatoire', icon: Dices },
 ]
 
 function StickyNoteContentDialog({
@@ -36,7 +39,11 @@ function StickyNoteContentDialog({
 }: StickyNoteContentDialogProps) {
   const maxDays = getMaxForecastDays(size)
   const [widget, setWidget] = useState<WidgetChoice>(
-    !initialContent || initialContent.kind === 'clock' ? 'clock' : 'weather',
+    !initialContent || initialContent.kind === 'clock'
+      ? 'clock'
+      : 'language' in initialContent
+        ? 'pokemon'
+        : 'weather',
   )
   const [timezone, setTimezone] = useState(
     initialContent?.kind === 'clock' ? initialContent.timezone : localTimezone,
@@ -44,13 +51,14 @@ function StickyNoteContentDialog({
   const [weatherMode, setWeatherMode] = useState<WeatherMode>(
     initialContent?.kind === 'weatherForecast' ? 'forecast' : 'current',
   )
-  const [city, setCity] = useState(
-    initialContent && initialContent.kind !== 'clock' ? initialContent.city : '',
-  )
+  const [city, setCity] = useState(initialContent && 'city' in initialContent ? initialContent.city : '')
   const [days, setDays] = useState(
     Math.min(initialContent?.kind === 'weatherForecast' ? initialContent.days : defaultForecastDays, maxDays),
   )
-  const canSubmit = !isSaving && (widget === 'clock' || city.trim() !== '')
+  const [language, setLanguage] = useState(
+    initialContent && 'language' in initialContent ? initialContent.language : defaultPokemonLanguage,
+  )
+  const canSubmit = !isSaving && (widget !== 'weather' || city.trim() !== '')
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -65,6 +73,7 @@ function StickyNoteContentDialog({
     if (!canSubmit) return
 
     if (widget === 'clock') onSelect({ kind: 'clock', timezone })
+    else if (widget === 'pokemon') onSelect({ kind: 'pokemonRandom', language })
     else if (weatherMode === 'current') onSelect({ kind: 'weatherCurrent', city: city.trim() })
     else onSelect({ kind: 'weatherForecast', city: city.trim(), days })
   }
@@ -101,7 +110,7 @@ function StickyNoteContentDialog({
           </button>
         </header>
 
-        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {widgetChoices.map((choice) => {
             const Icon = choice.icon
             const isSelected = choice.widget === widget
@@ -117,7 +126,7 @@ function StickyNoteContentDialog({
                 }`}
               >
                 <Icon size={28} aria-hidden="true" />
-                <span className="text-sm font-semibold">{choice.label}</span>
+                <span className="text-center text-sm font-semibold">{choice.label}</span>
               </button>
             )
           })}
@@ -125,6 +134,8 @@ function StickyNoteContentDialog({
 
         {widget === 'clock' ? (
           <TimezonePicker value={timezone} onChange={setTimezone} />
+        ) : widget === 'pokemon' ? (
+          <PokemonLanguagePicker value={language} onChange={setLanguage} />
         ) : (
           <WeatherOptions
             mode={weatherMode}

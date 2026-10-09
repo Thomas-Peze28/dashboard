@@ -1,3 +1,4 @@
+import { defaultPokemonLanguage, isPokemonLanguage } from '../constants/pokemon'
 import { isValidTimezone } from '../constants/timezones'
 import { clampForecastDays, defaultCity, defaultForecastDays } from '../constants/weather'
 import type {
@@ -13,6 +14,8 @@ const catalogNames: Record<StickyNoteContentKind, string> = {
   clock: 'digital_clock',
   weatherCurrent: 'weather_current',
   weatherForecast: 'weather_forecast',
+  pokemonRandom: 'pokemon_random_card',
+  pokemonCard: 'pokemon_card',
 }
 
 export type StickyNoteWidgetIds = Record<StickyNoteContentKind, string>
@@ -36,6 +39,18 @@ type UserWidgetsResponse = {
 function toContent(widgetName: string, config: Record<string, unknown> | null): StickyNoteContent | null {
   if (widgetName === catalogNames.clock) {
     return { kind: 'clock', timezone: isValidTimezone(config?.timezone) ? config.timezone : 'UTC' }
+  }
+  const language = isPokemonLanguage(config?.language) ? config.language : defaultPokemonLanguage
+
+  if (widgetName === catalogNames.pokemonRandom) return { kind: 'pokemonRandom', language }
+  // Seules les cartes gardées en favori (repérées par leur identifiant) sont affichées.
+  if (widgetName === catalogNames.pokemonCard && typeof config?.id === 'string') {
+    return {
+      kind: 'pokemonCard',
+      language,
+      cardId: config.id,
+      name: typeof config.name === 'string' ? config.name : '',
+    }
   }
 
   const city = typeof config?.city === 'string' && config.city.trim() !== '' ? config.city.trim() : defaultCity
@@ -62,6 +77,10 @@ function toConfig(content: StickyNoteContent) {
       return { city: content.city }
     case 'weatherForecast':
       return { city: content.city, days: content.days }
+    case 'pokemonRandom':
+      return { language: content.language }
+    case 'pokemonCard':
+      return { id: content.cardId, name: content.name, language: content.language }
   }
 }
 
@@ -105,6 +124,8 @@ export async function fetchStickyNotes(): Promise<{ widgetIds: StickyNoteWidgetI
       clock: findWidgetId(catalogNames.clock),
       weatherCurrent: findWidgetId(catalogNames.weatherCurrent),
       weatherForecast: findWidgetId(catalogNames.weatherForecast),
+      pokemonRandom: findWidgetId(catalogNames.pokemonRandom),
+      pokemonCard: findWidgetId(catalogNames.pokemonCard),
     },
     notes: widgetsData.widgets.flatMap((widget) => {
       const content = toContent(widget.widget.name, widget.config)

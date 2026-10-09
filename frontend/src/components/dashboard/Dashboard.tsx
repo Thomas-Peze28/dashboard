@@ -83,6 +83,7 @@ function Dashboard() {
             canMoveTo={(position) => canPlaceStickyNote(position, note, note.id)}
             onMove={(position) => relocateStickyNote(note.id, position)}
             onEdit={() => setEditState({ noteId: note.id, step: 'menu' })}
+            onChangeContent={(content) => changeStickyNoteWidget(note.id, content)}
           />
         ))}
       </div>
