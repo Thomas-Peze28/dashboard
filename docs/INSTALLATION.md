@@ -71,19 +71,19 @@ Le premier démarrage peut prendre quelques secondes de plus : suivez-le avec `d
 
 Le fichier `.env` à la racine contient les secrets. Il n'est **jamais** versionné (il est dans `.gitignore`) ; `.env.example` sert de modèle.
 
-Avec Docker, `docker-compose.yml` fixe déjà la plupart des valeurs (adresses, base de données, SMTP). Seules les clés OAuth sont lues dans `.env`.
+Avec Docker, `docker-compose.yml` fixe déjà la plupart des valeurs (adresses, base de données, SMTP). Seules la clé des sessions (`JWT_SECRET`) et les clés OAuth sont lues dans `.env`.
 
 | Variable | Utilisée par | Obligatoire | Description | Valeur avec Docker |
 |---|---|---|---|---|
+| `JWT_SECRET` | backend | Recommandée | Clé de signature des sessions, **32 caractères minimum** : générez-la avec `openssl rand -hex 32`. Absente, le backend utilise une clé aléatoire (sessions perdues à chaque redémarrage) ; trop courte, il refuse de démarrer | à renseigner dans `.env` |
 | `GOOGLE_CLIENT_ID` | backend | Pour Google et Gmail | Identifiant du client OAuth Google | à renseigner dans `.env` |
 | `GOOGLE_CLIENT_SECRET` | backend | Pour Google et Gmail | Secret du client OAuth Google | à renseigner dans `.env` |
 | `GITHUB_CLIENT_ID` | backend | Pour GitHub | Identifiant de l'application OAuth GitHub | à renseigner dans `.env` |
 | `GITHUB_CLIENT_SECRET` | backend | Pour GitHub | Secret de l'application OAuth GitHub | à renseigner dans `.env` |
 | `DATABASE_URL` | backend | Oui | Adresse de connexion PostgreSQL | `postgresql://user:password@db:5432/dashboard_db` |
-| `JWT_SECRET` | backend | Oui | Clé de signature des sessions : une longue chaîne aléatoire | fixée dans `docker-compose.yml` (à changer hors développement) |
 | `PORT` | backend | Non | Port du backend | `8080` |
 | `BACKEND_URL` | backend | Non | Adresse publique du backend (liens des e-mails de confirmation) | `http://localhost:8080` |
-| `FRONTEND_URL` | backend | Non | Adresse du frontend (redirection après connexion) | `http://localhost:3000` |
+| `FRONTEND_URL` | backend | Non | Adresse du frontend : redirection après connexion, et seule origine autorisée à appeler l'API depuis un navigateur (CORS) | `http://localhost:3000` |
 | `GOOGLE_REDIRECT_URI` | backend | Non | Adresse de retour OAuth Google | `http://localhost:8080/api/auth/google/callback` |
 | `GITHUB_REDIRECT_URI` | backend | Non | Adresse de retour OAuth GitHub | `http://localhost:8080/api/auth/github/callback` |
 | `SMTP_HOST`, `SMTP_PORT` | backend | Non | Serveur d'envoi des e-mails | `mailpit`, `1025` |
@@ -140,7 +140,7 @@ Dans `backend/.env`, adaptez au minimum :
 
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/dashboard_db
-JWT_SECRET=une_longue_chaine_aleatoire
+JWT_SECRET=<résultat de : openssl rand -hex 32>
 FRONTEND_URL=http://localhost:3000
 BACKEND_URL=http://localhost:8080
 GOOGLE_REDIRECT_URI=http://localhost:8080/api/auth/google/callback

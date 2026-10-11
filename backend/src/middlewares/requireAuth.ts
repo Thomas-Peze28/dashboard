@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import type { TokenPayload } from '../types/express.d.js';
+import { JWT_SECRET } from '../config/env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 
 /**
 * Middleware to require authentication for a route.

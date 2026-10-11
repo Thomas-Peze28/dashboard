@@ -10,7 +10,7 @@ services:
       - PORT=8080
       - NODE_ENV=development
       - DATABASE_URL=postgresql://user:password@db:5432/dashboard_db
-      - JWT_SECRET=super_secret_key_change_me
+      - JWT_SECRET=${JWT_SECRET:-}
       - BACKEND_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:3000
       - SMTP_HOST=mailpit

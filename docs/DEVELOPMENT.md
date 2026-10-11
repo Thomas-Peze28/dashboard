@@ -63,7 +63,7 @@ docker run -d --name mailpit-test -p 1026:1025 axllent/mailpit:latest
 # 2. Variables pour les tests
 cd backend
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5433/dashboard_test?schema=public"
-export JWT_SECRET=test SMTP_HOST=localhost SMTP_PORT=1026
+export JWT_SECRET=$(openssl rand -hex 32) SMTP_HOST=localhost SMTP_PORT=1026
 
 # 3. Créer les tables, puis lancer les tests
 npx prisma migrate deploy

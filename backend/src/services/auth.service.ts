@@ -3,8 +3,8 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { sendVerificationEmail } from './mail.service.js';
+import { JWT_SECRET } from '../config/env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 
 /**
 * Creates a new user in the database with a verification token.

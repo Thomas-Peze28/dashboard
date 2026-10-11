@@ -7,10 +7,11 @@ import widgetRoutes from './routes/widget.routes.js';
 import oauthRoutes from './routes/oauth.routes.js';
 import serviceRoutes from './routes/service.routes.js';
 import docsRoutes from './routes/docs.routes.js';
+import { FRONTEND_URL } from './config/env.js';
 
 export const app = express();
 
-app.use(cors());
+app.use(cors({ origin: FRONTEND_URL }));
 app.use(express.json());
 app.set('trust proxy', true);
 

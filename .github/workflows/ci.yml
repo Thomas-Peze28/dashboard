@@ -119,7 +119,7 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5433/dashboard_test?schema=public"
-          JWT_SECRET: "ci_integration_test_secret"
+          JWT_SECRET: "ci_integration_test_secret_at_least_32_chars"
           SMTP_HOST: "localhost"
           SMTP_PORT: "1026"
         run: npm test

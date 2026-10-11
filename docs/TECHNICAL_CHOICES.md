@@ -97,6 +97,7 @@ Le frontend n'appelle jamais directement les APIs externes : il demande les donn
 **Justification**
 - Le travail du backend est surtout d'attendre des réponses : base de données, APIs externes, serveurs OAuth. Le modèle asynchrone de Node.js est adapté à ce type de charge.
 - Express est minimal : on n'ajoute que ce dont on a besoin (`cors`, un middleware `requireAuth`, la documentation Swagger).
+- Sécurité de base : le CORS n'autorise que l'adresse du frontend (`FRONTEND_URL`), et la clé de signature des sessions (`JWT_SECRET`) est lue au démarrage dans `config/env.ts`. Une clé de moins de 32 caractères empêche le serveur de démarrer ; sans clé, il en génère une aléatoire. Aucune clé n'est écrite dans le code ni dans `docker-compose.yml`.
 - Express 5 transmet automatiquement les erreurs des fonctions `async` au gestionnaire d'erreurs.
 - Un middleware d'authentification unique protège toutes les routes privées (`router.use(requireAuth)`).
 

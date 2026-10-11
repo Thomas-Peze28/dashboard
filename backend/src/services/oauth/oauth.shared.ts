@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../lib/prisma.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
+import { JWT_SECRET } from '../../config/env.js';
 
 /**
 * Represents the OAuth user profile information.
