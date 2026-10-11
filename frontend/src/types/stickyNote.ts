@@ -17,9 +17,9 @@ export type StickyNoteContent =
   | { kind: 'pokemonRandom'; language: PokemonLanguage }
   | { kind: 'githubProfile' }
   | { kind: 'githubRepo'; repository: string }
-  | { kind: 'githubNotifications' }
+  | { kind: 'githubNotifications'; limit: number }
   | { kind: 'gmailUnread' }
-  | { kind: 'gmailRecent' }
+  | { kind: 'gmailRecent'; limit: number }
   | { kind: 'pokemonCard'; language: PokemonLanguage; name: string; cardId?: string }
 
 export type StickyNoteContentKind = StickyNoteContent['kind']

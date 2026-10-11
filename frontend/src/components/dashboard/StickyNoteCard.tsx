@@ -151,11 +151,25 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
             onChangeContent={onChangeContent}
           />
         ) : note.content.kind === 'gmailRecent' ? (
-          <GmailRecentContent noteId={note.id} refreshInterval={note.refreshInterval} columns={note.columns} rows={note.rows} />
+          <GmailRecentContent
+            key={note.content.limit}
+            noteId={note.id}
+            refreshInterval={note.refreshInterval}
+            limit={note.content.limit}
+            columns={note.columns}
+            rows={note.rows}
+          />
         ) : note.content.kind === 'gmailUnread' ? (
           <GmailUnreadContent noteId={note.id} refreshInterval={note.refreshInterval} columns={note.columns} rows={note.rows} />
         ) : note.content.kind === 'githubNotifications' ? (
-          <GithubNotificationsContent noteId={note.id} refreshInterval={note.refreshInterval} columns={note.columns} rows={note.rows} />
+          <GithubNotificationsContent
+            key={note.content.limit}
+            noteId={note.id}
+            refreshInterval={note.refreshInterval}
+            limit={note.content.limit}
+            columns={note.columns}
+            rows={note.rows}
+          />
         ) : note.content.kind === 'githubRepo' ? (
           <GithubRepoContent
             key={note.content.repository}

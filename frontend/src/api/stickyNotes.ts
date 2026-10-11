@@ -1,7 +1,7 @@
 import { defaultPokemonLanguage, isPokemonLanguage } from '../constants/pokemon'
 import { isValidTimezone } from '../constants/timezones'
-import { githubNotificationsLimit } from '../constants/github'
-import { gmailRecentLimit } from '../constants/gmail'
+import { clampGithubNotificationsLimit, defaultGithubNotificationsLimit } from '../constants/github'
+import { clampGmailRecentLimit, defaultGmailRecentLimit } from '../constants/gmail'
 import { clampForecastDays, defaultCity, defaultForecastDays } from '../constants/weather'
 import type {
   GridPosition,
@@ -49,9 +49,22 @@ function toContent(widgetName: string, config: Record<string, unknown> | null): 
     return { kind: 'clock', timezone: isValidTimezone(config?.timezone) ? config.timezone : 'UTC' }
   }
   if (widgetName === catalogNames.githubProfile) return { kind: 'githubProfile' }
-  if (widgetName === catalogNames.githubNotifications) return { kind: 'githubNotifications' }
   if (widgetName === catalogNames.gmailUnread) return { kind: 'gmailUnread' }
-  if (widgetName === catalogNames.gmailRecent) return { kind: 'gmailRecent' }
+
+  const limit = Number(config?.limit)
+
+  if (widgetName === catalogNames.githubNotifications) {
+    return {
+      kind: 'githubNotifications',
+      limit: Number.isInteger(limit) ? clampGithubNotificationsLimit(limit) : defaultGithubNotificationsLimit,
+    }
+  }
+  if (widgetName === catalogNames.gmailRecent) {
+    return {
+      kind: 'gmailRecent',
+      limit: Number.isInteger(limit) ? clampGmailRecentLimit(limit) : defaultGmailRecentLimit,
+    }
+  }
   if (widgetName === catalogNames.githubRepo) {
     return { kind: 'githubRepo', repository: typeof config?.repository === 'string' ? config.repository : '' }
   }
@@ -96,9 +109,8 @@ function toConfig(content: StickyNoteContent) {
     case 'gmailUnread':
       return {}
     case 'gmailRecent':
-      return { limit: gmailRecentLimit }
     case 'githubNotifications':
-      return { limit: githubNotificationsLimit }
+      return { limit: content.limit }
     case 'githubRepo':
       return { repository: content.repository }
     case 'pokemonCard':

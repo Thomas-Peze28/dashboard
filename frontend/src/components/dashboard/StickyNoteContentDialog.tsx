@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Clock, CloudSun, Dices, GitBranch, Mail, Search, X } from 'lucide-react'
+import { defaultGithubNotificationsLimit } from '../../constants/github'
+import { defaultGmailRecentLimit, getMaxGmailRecentLimit } from '../../constants/gmail'
 import { defaultPokemonLanguage } from '../../constants/pokemon'
 import { getDefaultRefreshInterval, supportsRefresh } from '../../constants/refresh'
 import { localTimezone } from '../../constants/timezones'
@@ -49,6 +51,7 @@ function StickyNoteContentDialog({
   onClose,
 }: StickyNoteContentDialogProps) {
   const maxDays = getMaxForecastDays(size)
+  const maxEmails = getMaxGmailRecentLimit(size)
   const [widget, setWidget] = useState<WidgetChoice>(() => {
     if (!initialContent || initialContent.kind === 'clock') return 'clock'
     if (initialContent.kind === 'pokemonRandom') return 'pokemon'
@@ -81,6 +84,12 @@ function StickyNoteContentDialog({
         : 'profile',
   )
   const [gmailMode, setGmailMode] = useState<GmailMode>(initialContent?.kind === 'gmailRecent' ? 'recent' : 'unread')
+  const [emailsLimit, setEmailsLimit] = useState(
+    Math.min(initialContent?.kind === 'gmailRecent' ? initialContent.limit : defaultGmailRecentLimit, maxEmails),
+  )
+  const [notificationsLimit, setNotificationsLimit] = useState(
+    initialContent?.kind === 'githubNotifications' ? initialContent.limit : defaultGithubNotificationsLimit,
+  )
   const [repository, setRepository] = useState(
     initialContent?.kind === 'githubRepo' ? initialContent.repository : '',
   )
@@ -106,10 +115,12 @@ function StickyNoteContentDialog({
     if (widget === 'clock') return { kind: 'clock', timezone }
     if (widget === 'pokemon') return { kind: 'pokemonRandom', language }
     if (widget === 'pokemonCard') return { kind: 'pokemonCard', language, name: pokemonName.trim() }
-    if (widget === 'gmail') return { kind: gmailMode === 'recent' ? 'gmailRecent' : 'gmailUnread' }
+    if (widget === 'gmail') {
+      return gmailMode === 'recent' ? { kind: 'gmailRecent', limit: emailsLimit } : { kind: 'gmailUnread' }
+    }
     if (widget === 'github') {
       if (githubMode === 'profile') return { kind: 'githubProfile' }
-      if (githubMode === 'notifications') return { kind: 'githubNotifications' }
+      if (githubMode === 'notifications') return { kind: 'githubNotifications', limit: notificationsLimit }
       return { kind: 'githubRepo', repository: repository.trim() }
     }
     if (weatherMode === 'current') return { kind: 'weatherCurrent', city: city.trim() }
@@ -183,13 +194,21 @@ function StickyNoteContentDialog({
         ) : widget === 'pokemon' ? (
           <PokemonLanguagePicker value={language} onChange={setLanguage} />
         ) : widget === 'gmail' ? (
-          <GmailOptions mode={gmailMode} onModeChange={setGmailMode} />
+          <GmailOptions
+            mode={gmailMode}
+            recentLimit={emailsLimit}
+            maxRecentLimit={maxEmails}
+            onModeChange={setGmailMode}
+            onRecentLimitChange={setEmailsLimit}
+          />
         ) : widget === 'github' ? (
           <GithubOptions
             mode={githubMode}
             repository={repository}
+            notificationsLimit={notificationsLimit}
             onModeChange={setGithubMode}
             onRepositoryChange={setRepository}
+            onNotificationsLimitChange={setNotificationsLimit}
             onSubmit={handleSubmit}
           />
         ) : widget === 'pokemonCard' ? (

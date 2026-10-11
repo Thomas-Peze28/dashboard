@@ -1,10 +1,15 @@
+import { maxGithubNotificationsLimit, minGithubNotificationsLimit } from '../../../constants/github'
+import CountSlider from '../CountSlider'
+
 export type GithubMode = 'profile' | 'repo' | 'notifications'
 
 type GithubOptionsProps = {
   mode: GithubMode
   repository: string
+  notificationsLimit: number
   onModeChange: (mode: GithubMode) => void
   onRepositoryChange: (repository: string) => void
+  onNotificationsLimitChange: (limit: number) => void
   onSubmit: () => void
 }
 
@@ -14,7 +19,15 @@ const modeChoices: Array<{ mode: GithubMode; label: string; description: string 
   { mode: 'notifications', label: 'Notifications', description: 'Affiche vos notifications GitHub non lues.' },
 ]
 
-function GithubOptions({ mode, repository, onModeChange, onRepositoryChange, onSubmit }: GithubOptionsProps) {
+function GithubOptions({
+  mode,
+  repository,
+  notificationsLimit,
+  onModeChange,
+  onRepositoryChange,
+  onNotificationsLimitChange,
+  onSubmit,
+}: GithubOptionsProps) {
   return (
     <div className="mt-4">
       <div role="group" aria-label="Widget GitHub" className="grid grid-cols-3 gap-2">
@@ -57,6 +70,17 @@ function GithubOptions({ mode, repository, onModeChange, onRepositoryChange, onS
           />
           <p className="mt-1 text-xs text-gray-500">Au format propriétaire/dépôt.</p>
         </>
+      )}
+
+      {mode === 'notifications' && (
+        <CountSlider
+          id="github-notifications-limit"
+          label="Nombre maximum de notifications"
+          value={notificationsLimit}
+          min={minGithubNotificationsLimit}
+          max={maxGithubNotificationsLimit}
+          onChange={onNotificationsLimitChange}
+        />
       )}
 
       <p className="mt-4 text-sm text-gray-600">

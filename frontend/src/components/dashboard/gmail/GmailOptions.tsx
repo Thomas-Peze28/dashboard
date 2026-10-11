@@ -1,8 +1,14 @@
+import { minGmailRecentLimit } from '../../../constants/gmail'
+import CountSlider from '../CountSlider'
+
 export type GmailMode = 'unread' | 'recent'
 
 type GmailOptionsProps = {
   mode: GmailMode
+  recentLimit: number
+  maxRecentLimit: number
   onModeChange: (mode: GmailMode) => void
+  onRecentLimitChange: (limit: number) => void
 }
 
 const modeChoices: Array<{ mode: GmailMode; label: string; description: string }> = [
@@ -10,7 +16,7 @@ const modeChoices: Array<{ mode: GmailMode; label: string; description: string }
   { mode: 'recent', label: 'Derniers messages', description: 'Affiche les derniers messages reçus dans votre boîte Gmail.' },
 ]
 
-function GmailOptions({ mode, onModeChange }: GmailOptionsProps) {
+function GmailOptions({ mode, recentLimit, maxRecentLimit, onModeChange, onRecentLimitChange }: GmailOptionsProps) {
   return (
     <div className="mt-4">
       <div role="group" aria-label="Widget Gmail" className="grid grid-cols-2 gap-2">
@@ -32,6 +38,17 @@ function GmailOptions({ mode, onModeChange }: GmailOptionsProps) {
           )
         })}
       </div>
+
+      {mode === 'recent' && (
+        <CountSlider
+          id="gmail-recent-limit"
+          label="Nombre d’e-mails"
+          value={recentLimit}
+          min={minGmailRecentLimit}
+          max={maxRecentLimit}
+          onChange={onRecentLimitChange}
+        />
+      )}
 
       <p className="mt-4 text-sm text-gray-600">
         {modeChoices.find((choice) => choice.mode === mode)?.description} Si votre compte Google n’est pas encore

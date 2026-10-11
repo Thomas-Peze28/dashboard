@@ -7,6 +7,7 @@ import { describeGmailError } from './gmailShared'
 type GmailRecentContentProps = {
   noteId: string
   refreshInterval: number
+  limit: number
   columns: number
   rows: number
 }
@@ -74,7 +75,7 @@ function EmailList({ emails, className }: { emails: GmailEmail[]; className: str
   )
 }
 
-function GmailRecentContent({ noteId, refreshInterval, columns, rows }: GmailRecentContentProps) {
+function GmailRecentContent({ noteId, refreshInterval, limit, columns, rows }: GmailRecentContentProps) {
   const { data, error } = useStickyNoteData<GmailRecentData>(noteId, refreshInterval * 1000)
 
   if (!data) {
@@ -99,7 +100,7 @@ function GmailRecentContent({ noteId, refreshInterval, columns, rows }: GmailRec
     return (
       <div className="absolute inset-0 overflow-hidden px-[3cqmin] py-[6cqmin] text-gray-900 [container-type:size]">
         <EmailList
-          emails={data.emails.slice(0, 2)}
+          emails={data.emails.slice(0, Math.min(limit, 2))}
           className="grid h-full grid-rows-2 gap-[4cqmin] text-[17.3cqmin] [&>li]:gap-[0.35em]"
         />
       </div>
@@ -113,7 +114,7 @@ function GmailRecentContent({ noteId, refreshInterval, columns, rows }: GmailRec
         <span className="truncate text-[8cqmin] font-bold">Derniers messages</span>
       </div>
       <EmailList
-        emails={data.emails.slice(0, isLarge ? 6 : 4)}
+        emails={data.emails.slice(0, Math.min(limit, isLarge ? 6 : 4))}
         className={
           isLarge
             ? 'grid flex-1 grid-cols-2 grid-rows-3 gap-x-[6cqmin] gap-y-[4cqmin] text-[6cqmin]'

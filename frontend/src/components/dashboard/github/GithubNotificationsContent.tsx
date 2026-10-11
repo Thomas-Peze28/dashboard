@@ -1,5 +1,4 @@
 import { Bell, CircleDot, GitCommitHorizontal, GitPullRequest, MessageSquare, Tag } from 'lucide-react'
-import { githubNotificationsLimit } from '../../../constants/github'
 import { useStickyNoteData } from '../../../hooks/useStickyNoteData'
 import { isLoginRequired, loginLabels, redirectToLogin } from '../accountLink'
 import WidgetPlaceholder from '../WidgetPlaceholder'
@@ -10,6 +9,7 @@ import {
 type GithubNotificationsContentProps = {
   noteId: string
   refreshInterval: number
+  limit: number
   columns: number
   rows: number
 }
@@ -80,7 +80,7 @@ function NotificationList({ notifications, className }: { notifications: GithubN
   )
 }
 
-function GithubNotificationsContent({ noteId, refreshInterval, columns, rows }: GithubNotificationsContentProps) {
+function GithubNotificationsContent({ noteId, refreshInterval, limit, columns, rows }: GithubNotificationsContentProps) {
   const { data, error } = useStickyNoteData<GithubNotificationsData>(noteId, refreshInterval * 1000)
 
   if (!data) {
@@ -95,7 +95,8 @@ function GithubNotificationsContent({ noteId, refreshInterval, columns, rows }: 
     )
   }
 
-  const count = data.count >= githubNotificationsLimit ? `${githubNotificationsLimit}+` : String(data.count)
+  // GitHub renvoie au plus `limit` notifications : à la limite, il peut y en avoir davantage.
+  const count = data.count >= limit ? `${limit}+` : String(data.count)
   const unreadLabel = data.count > 1 ? 'non lues' : 'non lue'
   const isLarge = columns > rows
 
