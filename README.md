@@ -6,13 +6,15 @@ Chaque utilisateur compose son propre tableau, et les widgets se mettent à jour
 
 ## Sommaire
 
-- [À quoi ça sert](#à-quoi-ça-sert)
-- [Fonctionnalités](#fonctionnalités)
-- [Services et widgets](#services-et-widgets)
-- [Démarrage rapide](#démarrage-rapide)
-- [Utilisation](#utilisation)
-- [Technologies et structure](#technologies-et-structure)
-- [Documentation](#documentation)
+- [Dashboard](#dashboard)
+  - [Sommaire](#sommaire)
+  - [À quoi ça sert](#à-quoi-ça-sert)
+  - [Fonctionnalités](#fonctionnalités)
+  - [Services et widgets](#services-et-widgets)
+  - [Démarrage rapide](#démarrage-rapide)
+  - [Utilisation](#utilisation)
+  - [Technologies et structure](#technologies-et-structure)
+  - [Documentation](#documentation)
 
 ## À quoi ça sert
 
@@ -127,7 +129,7 @@ flowchart LR
 | Document | Pour qui | Contenu |
 |---|---|---|
 | [Guide utilisateur](docs/USER_GUIDE.md) | Utilisateurs | Créer un compte, ajouter et gérer ses widgets |
-| [Installation](docs/INSTALLATION.md) | Développeurs, évaluateurs | Installer, configurer (OAuth, variables d'environnement), dépanner |
+| [Installation](docs/INSTALLATION.md) | Développeurs | Installer, configurer (OAuth, variables d'environnement), dépanner |
 | [Services et widgets](docs/WIDGETS.md) | Tous | Ce que fait chaque widget et comment le configurer |
 | [Architecture](docs/ARCHITECTURE.md) | Développeurs | Structure du code, modèle de données, fonctionnement interne |
 | [API](docs/API.md) | Développeurs | Routes de l'API, `about.json`, Swagger |
