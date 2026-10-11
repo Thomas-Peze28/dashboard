@@ -72,7 +72,7 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
                     {
                         name: 'days',
                         type: 'integer',
-                        description: 'Number of forecast days (1 to 7)',
+                        description: 'Number of forecast days (1 to 10, 5 by default)',
                     },
                 ],
             },
