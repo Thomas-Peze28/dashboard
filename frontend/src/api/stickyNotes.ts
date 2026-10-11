@@ -39,6 +39,7 @@ type UserWidgetsResponse = {
     width: number
     height: number
     config: Record<string, unknown> | null
+    refreshInterval: number
     widget: { name: string }
   }>
 }
@@ -107,7 +108,6 @@ function toConfig(content: StickyNoteContent) {
   }
 }
 
-// Les identifiants du catalogue sont chargés une seule fois : on vérifie qu'ils couvrent bien le widget demandé.
 function getWidgetId(widgetIds: StickyNoteWidgetIds, content: StickyNoteContent) {
   const widgetId = widgetIds[content.kind] as string | undefined
 
@@ -167,6 +167,7 @@ export async function fetchStickyNotes(): Promise<{ widgetIds: StickyNoteWidgetI
           columns: widget.width,
           rows: widget.height,
           content,
+          refreshInterval: widget.refreshInterval,
         },
       ]
     }),
@@ -178,6 +179,7 @@ export async function createStickyNote(
   position: GridPosition,
   size: StickyNoteSize,
   content: StickyNoteContent,
+  refreshInterval?: number,
 ): Promise<StickyNote> {
   const response = await fetch(`${apiBaseUrl}/api/widgets`, {
     method: 'POST',
@@ -188,19 +190,20 @@ export async function createStickyNote(
     body: JSON.stringify({
       widgetId: getWidgetId(widgetIds, content),
       config: toConfig(content),
+      refreshInterval,
       positionX: position.column,
       positionY: position.row,
       width: size.columns,
       height: size.rows,
     }),
   })
-  const data = (await response.json()) as { widget?: { id: string }; error?: string }
+  const data = (await response.json()) as { widget?: { id: string; refreshInterval: number }; error?: string }
 
   if (!response.ok || !data.widget) {
     throw new Error(data.error ?? 'Impossible d’enregistrer le post-it.')
   }
 
-  return { id: data.widget.id, ...position, ...size, content }
+  return { id: data.widget.id, ...position, ...size, content, refreshInterval: data.widget.refreshInterval }
 }
 
 async function patchStickyNote(noteId: string, body: Record<string, unknown>, fallbackError: string) {
@@ -239,10 +242,11 @@ export async function changeStickyNoteContent(
   widgetIds: StickyNoteWidgetIds,
   noteId: string,
   content: StickyNoteContent,
+  refreshInterval?: number,
 ): Promise<void> {
   await patchStickyNote(
     noteId,
-    { widgetId: getWidgetId(widgetIds, content), config: toConfig(content) },
+    { widgetId: getWidgetId(widgetIds, content), config: toConfig(content), refreshInterval },
     'Impossible de modifier le post-it.',
   )
 }
@@ -259,7 +263,6 @@ export async function removeStickyNote(noteId: string): Promise<void> {
   }
 }
 
-// Données calculées par le backend pour un widget (météo, etc.).
 export async function fetchStickyNoteData<T>(noteId: string): Promise<T> {
   const response = await fetch(`${apiBaseUrl}/api/widgets/${noteId}/data`, { headers: authHeaders() })
   const body = (await response.json().catch(() => ({}))) as { data?: T; error?: string }

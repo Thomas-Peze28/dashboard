@@ -37,16 +37,15 @@ function Dashboard() {
     setPendingSize(null)
   }
 
-  // Un widget GitHub sans compte relié envoie directement vers la connexion GitHub.
   const connectAccountIfNeeded = async (noteId: string, content: StickyNoteContent) => {
     const provider = getAccountProvider(content)
 
     if (provider && (await needsLogin(provider, noteId))) redirectToLogin(provider)
   }
 
-  const handleSelectContent = async (content: StickyNoteContent) => {
+  const handleSelectContent = async (content: StickyNoteContent, refreshInterval?: number) => {
     if (!pendingCell || !pendingSize) return
-    const createdNote = await addStickyNote(pendingCell, pendingSize, content)
+    const createdNote = await addStickyNote(pendingCell, pendingSize, content, refreshInterval)
 
     if (!createdNote) return
 
@@ -154,11 +153,12 @@ function Dashboard() {
         <StickyNoteContentDialog
           size={editedNote}
           initialContent={editedNote.content}
+          initialRefreshInterval={editedNote.refreshInterval}
           backLabel="Retour"
           submitLabel="Enregistrer"
           isSaving={isSavingStickyNote}
-          onSelect={async (content) => {
-            if (!(await changeStickyNoteWidget(editedNote.id, content))) return
+          onSelect={async (content, refreshInterval) => {
+            if (!(await changeStickyNoteWidget(editedNote.id, content, refreshInterval))) return
 
             closeEdit()
             await connectAccountIfNeeded(editedNote.id, content)

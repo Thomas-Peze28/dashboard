@@ -2,10 +2,11 @@ import { Mail } from 'lucide-react'
 import { useStickyNoteData } from '../../../hooks/useStickyNoteData'
 import { isLoginRequired, loginLabels, redirectToLogin } from '../accountLink'
 import WidgetPlaceholder from '../WidgetPlaceholder'
-import { describeGmailError, gmailRefreshDelay } from './gmailShared'
+import { describeGmailError } from './gmailShared'
 
 type GmailRecentContentProps = {
   noteId: string
+  refreshInterval: number
   columns: number
   rows: number
 }
@@ -73,8 +74,8 @@ function EmailList({ emails, className }: { emails: GmailEmail[]; className: str
   )
 }
 
-function GmailRecentContent({ noteId, columns, rows }: GmailRecentContentProps) {
-  const { data, error } = useStickyNoteData<GmailRecentData>(noteId, gmailRefreshDelay)
+function GmailRecentContent({ noteId, refreshInterval, columns, rows }: GmailRecentContentProps) {
+  const { data, error } = useStickyNoteData<GmailRecentData>(noteId, refreshInterval * 1000)
 
   if (!data) {
     return (

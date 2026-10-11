@@ -10,7 +10,6 @@ describe('User Widgets API Integration Tests', () => {
     let createdUserWidgetId = '';
 
     beforeAll(async () => {
-        // 1. Récupérer ou créer un service et un widget pour le test
         let widget = await prisma.widget.findFirst({ where: { name: 'digital_clock' } });
 
         if (!widget) {
@@ -34,7 +33,6 @@ describe('User Widgets API Integration Tests', () => {
 
         availableWidgetId = widget.id;
 
-        // 2. Création et validation de l'utilisateur de test
         const authRes = await request(app)
             .post('/api/auth/register')
             .send({ email: `widget_test_${Date.now()}@epitech.eu`, password: 'Password1234!' });
@@ -167,7 +165,6 @@ describe('User Widgets API Integration Tests', () => {
         expect(res.body.data).toHaveProperty('time');
         expect(res.body.data).toHaveProperty('date');
 
-        // Vérifie le format de l'heure (HH:mm:ss)
         expect(res.body.data.time).toMatch(/^\d{2}:\d{2}:\d{2}$/);
     });
 

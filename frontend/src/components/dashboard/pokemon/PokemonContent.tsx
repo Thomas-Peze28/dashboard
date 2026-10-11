@@ -16,8 +16,6 @@ type PokemonContentProps = {
 const buttonClass =
   'absolute bottom-1 z-10 inline-flex h-7 w-7 items-center justify-center rounded-sm bg-white/85 shadow-sm transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60'
 
-// Les détails sont écrits dans la langue de la carte et peuvent manquer (ex : un Dresseur n'a pas de PV).
-// Une carte cherchée par son nom n'en a aucun : le backend ne renvoie alors que l'identifiant, le nom et l'image.
 type PokemonCardData = {
   id: string
   name: string
@@ -64,11 +62,8 @@ function PokemonContent({ noteId, content, columns, rows, onChangeContent }: Pok
   const [drawCount, setDrawCount] = useState(0)
   const [isSavingFavorite, setIsSavingFavorite] = useState(false)
   const isFavorite = content.kind === 'pokemonCard' && Boolean(content.cardId)
-  // Carte cherchée par son nom : toujours la même, donc ni tirage ni favori.
   const isNamed = content.kind === 'pokemonCard' && !content.cardId
 
-  // Carte aléatoire : le backend en tire une nouvelle à chaque appel (une par affichage, puis une par clic).
-  // Carte favorite : le backend renvoie toujours la même, inutile de la redemander en changeant de mode.
   useEffect(() => {
     let isCancelled = false
     const load = async () => {
@@ -100,7 +95,6 @@ function PokemonContent({ noteId, content, columns, rows, onChangeContent }: Pok
     setDrawCount((count) => count + 1)
   }
 
-  // Le favori garde la carte affichée ; le retirer revient au tirage aléatoire, sans changer de carte tout de suite.
   const handleToggleFavorite = async () => {
     if (!card) return
 
@@ -113,7 +107,6 @@ function PokemonContent({ noteId, content, columns, rows, onChangeContent }: Pok
     setIsSavingFavorite(false)
   }
 
-  // Grand format : la carte à gauche, ses informations à droite.
   const isLarge = columns > rows
 
   return (
@@ -128,7 +121,6 @@ function PokemonContent({ noteId, content, columns, rows, onChangeContent }: Pok
             setCard(null)
             setError('Carte indisponible')
           }}
-          // Au survol, la carte s'agrandit au-delà du post-it pour rester lisible (surtout en 1 × 1).
           className={`h-full object-contain drop-shadow-md transition-transform duration-200 ${
             isLarge ? 'w-auto shrink-0 origin-left' : 'w-full'
           } ${

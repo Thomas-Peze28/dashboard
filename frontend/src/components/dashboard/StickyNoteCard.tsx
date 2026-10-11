@@ -30,14 +30,12 @@ type DragState = {
   cellHeight: number
 }
 
-// En dessous de cette distance (en pixels), le geste compte comme un clic et non un déplacement.
 const clickTolerance = 5
 
 function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeContent }: StickyNoteCardProps) {
   const [drag, setDrag] = useState<DragState | null>(null)
 
   const isMoving = drag !== null && Math.hypot(drag.offsetX, drag.offsetY) >= clickTolerance
-  // Case visée par le coin haut-gauche du post-it, bornée à la grille.
   const dropTarget: GridPosition | null =
     drag && isMoving
       ? {
@@ -55,7 +53,6 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (isDeleting || event.button !== 0) return
-    // Les boutons et les liens posés sur le post-it gardent leur propre clic.
     if ((event.target as HTMLElement).closest('button, a')) return
 
     const grid = event.currentTarget.closest('[data-dashboard-grid]')
@@ -145,7 +142,6 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
         {note.content.kind === 'clock' ? (
           <ClockContent timezone={note.content.timezone} columns={note.columns} rows={note.rows} />
         ) : note.content.kind === 'pokemonRandom' || note.content.kind === 'pokemonCard' ? (
-          // La clé recharge la carte quand la langue ou le nom cherché change, mais pas quand on la met en favori.
           <PokemonContent
             key={`${note.content.language}:${note.content.kind === 'pokemonCard' && !note.content.cardId ? note.content.name : ''}`}
             noteId={note.id}
@@ -155,16 +151,16 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
             onChangeContent={onChangeContent}
           />
         ) : note.content.kind === 'gmailRecent' ? (
-          <GmailRecentContent noteId={note.id} columns={note.columns} rows={note.rows} />
+          <GmailRecentContent noteId={note.id} refreshInterval={note.refreshInterval} columns={note.columns} rows={note.rows} />
         ) : note.content.kind === 'gmailUnread' ? (
-          <GmailUnreadContent noteId={note.id} columns={note.columns} rows={note.rows} />
+          <GmailUnreadContent noteId={note.id} refreshInterval={note.refreshInterval} columns={note.columns} rows={note.rows} />
         ) : note.content.kind === 'githubNotifications' ? (
-          <GithubNotificationsContent noteId={note.id} columns={note.columns} rows={note.rows} />
+          <GithubNotificationsContent noteId={note.id} refreshInterval={note.refreshInterval} columns={note.columns} rows={note.rows} />
         ) : note.content.kind === 'githubRepo' ? (
-          // La clé recharge les données quand on change de dépôt.
           <GithubRepoContent
             key={note.content.repository}
             noteId={note.id}
+            refreshInterval={note.refreshInterval}
             repository={note.content.repository}
             columns={note.columns}
             rows={note.rows}
@@ -172,14 +168,15 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
         ) : note.content.kind === 'githubProfile' ? (
           <GithubProfileContent
             noteId={note.id}
+            refreshInterval={note.refreshInterval}
             columns={note.columns}
             rows={note.rows}
           />
         ) : (
-          // La clé force un rechargement des données quand la ville ou le nombre de jours change.
           <WeatherContent
             key={JSON.stringify(note.content)}
             noteId={note.id}
+            refreshInterval={note.refreshInterval}
             content={note.content}
             columns={note.columns}
             rows={note.rows}

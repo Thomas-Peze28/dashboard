@@ -1,5 +1,3 @@
-export const githubRefreshDelay = 10 * 60 * 1000
-
 const errorLabels: Record<string, string> = {
   'No GitHub account linked. Please sign in with GitHub.': 'Connectez-vous avec GitHub pour utiliser ce widget',
   'GitHub token expired or revoked. Please sign in with GitHub again.': 'Reconnectez-vous avec GitHub',

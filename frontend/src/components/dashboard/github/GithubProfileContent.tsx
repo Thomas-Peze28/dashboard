@@ -5,11 +5,11 @@ import WidgetPlaceholder from '../WidgetPlaceholder'
 import { GithubDetails, GithubStats, type GithubDetail, type GithubStat } from './GithubParts'
 import {
   describeGithubError,
-  githubRefreshDelay,
 } from './githubShared'
 
 type GithubProfileContentProps = {
   noteId: string
+  refreshInterval: number
   columns: number
   rows: number
 }
@@ -31,8 +31,8 @@ type GithubProfileData = {
 
 const memberSinceFormat = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
 
-function GithubProfileContent({ noteId, columns, rows }: GithubProfileContentProps) {
-  const { data: profile, error } = useStickyNoteData<GithubProfileData>(noteId, githubRefreshDelay)
+function GithubProfileContent({ noteId, refreshInterval, columns, rows }: GithubProfileContentProps) {
+  const { data: profile, error } = useStickyNoteData<GithubProfileData>(noteId, refreshInterval * 1000)
 
   if (!profile) {
     return (
@@ -55,7 +55,6 @@ function GithubProfileContent({ noteId, columns, rows }: GithubProfileContentPro
     />
   )
   const displayName = profile.name ?? profile.login
-  // La description est facultative sur GitHub : on le signale plutôt que de laisser un vide.
   const bio = (
     <p className={`line-clamp-2 text-[5cqmin] leading-snug ${profile.bio ? '' : 'italic text-gray-700'}`}>
       {profile.bio ?? 'Aucune description sur ce profil.'}
@@ -70,7 +69,6 @@ function GithubProfileContent({ noteId, columns, rows }: GithubProfileContentPro
     { icon: Building2, label: 'Organisation', value: profile.company },
     { icon: MapPin, label: 'Lieu', value: profile.location },
   ]
-  // Grand format uniquement : le lien du profil se place sous la date d'inscription.
   const accountDetails: GithubDetail[] = [
     {
       icon: CalendarDays,

@@ -5,11 +5,11 @@ import WidgetPlaceholder from '../WidgetPlaceholder'
 import { GithubDetails, GithubStats, type GithubDetail, type GithubStat } from './GithubParts'
 import {
   describeGithubError,
-  githubRefreshDelay,
 } from './githubShared'
 
 type GithubRepoContentProps = {
   noteId: string
+  refreshInterval: number
   repository: string
   columns: number
   rows: number
@@ -32,8 +32,8 @@ type GithubRepoData = {
 
 const pushDateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 
-function GithubRepoContent({ noteId, repository, columns, rows }: GithubRepoContentProps) {
-  const { data: repo, error } = useStickyNoteData<GithubRepoData>(noteId, githubRefreshDelay)
+function GithubRepoContent({ noteId, refreshInterval, repository, columns, rows }: GithubRepoContentProps) {
+  const { data: repo, error } = useStickyNoteData<GithubRepoData>(noteId, refreshInterval * 1000)
 
   if (!repo) {
     return (
@@ -57,7 +57,6 @@ function GithubRepoContent({ noteId, repository, columns, rows }: GithubRepoCont
     { icon: Code, label: 'Langage principal', value: repo.language },
     { icon: GitBranch, label: 'Branche par défaut', value: repo.defaultBranch },
   ]
-  // Grand format uniquement : le lien du dépôt se place sous la date du dernier push.
   const activityDetails: GithubDetail[] = [
     { icon: History, label: 'Dernier push', value: `Dernier push le ${pushDateFormat.format(new Date(repo.pushedAt))}` },
     { icon: Link, label: 'Adresse du dépôt', value: repo.url.replace(/^https?:\/\//, ''), href: repo.url },
@@ -81,7 +80,6 @@ function GithubRepoContent({ noteId, repository, columns, rows }: GithubRepoCont
       <span className={`truncate text-gray-700 ${ownerClass}`}>{repo.owner.login}</span>
     </div>
   )
-  // La description est facultative sur GitHub : on le signale plutôt que de laisser un vide.
   const description = (
     <p className={`line-clamp-2 text-[5cqmin] leading-snug ${repo.description ? '' : 'italic text-gray-700'}`}>
       {repo.description ?? 'Aucune description pour ce dépôt.'}

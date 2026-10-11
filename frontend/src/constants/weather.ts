@@ -20,13 +20,11 @@ export const defaultForecastDays = 5
 
 export const clampForecastDays = (days: number) => Math.min(Math.max(days, minForecastDays), maxForecastDays)
 
-// Le petit post-it (1 × 1) n'a pas la place d'afficher plus de 5 jours.
 export const getMaxForecastDays = ({ columns, rows }: StickyNoteSize) =>
   columns === 1 && rows === 1 ? smallNoteMaxForecastDays : maxForecastDays
 
 type WeatherIcon = typeof Sun
 
-// Codes météo WMO renvoyés par Open-Meteo.
 const weatherCodes: Record<number, { label: string; icon: WeatherIcon; nightIcon?: WeatherIcon }> = {
   0: { label: 'Ciel dégagé', icon: Sun, nightIcon: Moon },
   1: { label: 'Peu nuageux', icon: CloudSun, nightIcon: CloudMoon },

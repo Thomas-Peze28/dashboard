@@ -28,7 +28,6 @@ export function isValidTimezone(timezone: unknown): timezone is string {
   }
 }
 
-// "America/New_York" -> "New York"
 export function getTimezoneLabel(timezone: string) {
   const popular = popularTimezones.find((item) => item.timezone === timezone)
   if (popular) return popular.label
@@ -54,7 +53,6 @@ const toOption = (timezone: string, isPopular: boolean, keywords = ''): Timezone
   search: normalizeSearch(`${getTimezoneLabel(timezone)} ${timezone} ${keywords}`),
 })
 
-// Villes courantes d'abord, puis tous les fuseaux connus du navigateur.
 export const timezoneOptions: TimezoneOption[] = [
   ...popularTimezones.map((item) => toOption(item.timezone, true, item.keywords)),
   ...Intl.supportedValuesOf('timeZone')

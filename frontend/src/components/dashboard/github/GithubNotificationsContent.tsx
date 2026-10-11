@@ -9,6 +9,7 @@ import {
 
 type GithubNotificationsContentProps = {
   noteId: string
+  refreshInterval: number
   columns: number
   rows: number
 }
@@ -26,9 +27,6 @@ type GithubNotificationsData = {
   count: number
   notifications: GithubNotification[]
 }
-
-// Les notifications bougent vite : on les recharge plus souvent que le profil ou un dépôt.
-const refreshDelay = 2 * 60 * 1000
 
 const typeIcons: Record<string, typeof Bell> = {
   Issue: CircleDot,
@@ -82,8 +80,8 @@ function NotificationList({ notifications, className }: { notifications: GithubN
   )
 }
 
-function GithubNotificationsContent({ noteId, columns, rows }: GithubNotificationsContentProps) {
-  const { data, error } = useStickyNoteData<GithubNotificationsData>(noteId, refreshDelay)
+function GithubNotificationsContent({ noteId, refreshInterval, columns, rows }: GithubNotificationsContentProps) {
+  const { data, error } = useStickyNoteData<GithubNotificationsData>(noteId, refreshInterval * 1000)
 
   if (!data) {
     return (
@@ -97,7 +95,6 @@ function GithubNotificationsContent({ noteId, columns, rows }: GithubNotificatio
     )
   }
 
-  // Le backend ne renvoie pas plus que la limite demandée : au-delà, le total exact est inconnu.
   const count = data.count >= githubNotificationsLimit ? `${githubNotificationsLimit}+` : String(data.count)
   const unreadLabel = data.count > 1 ? 'non lues' : 'non lue'
   const isLarge = columns > rows

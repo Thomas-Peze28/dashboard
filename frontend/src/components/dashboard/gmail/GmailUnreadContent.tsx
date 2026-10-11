@@ -2,18 +2,19 @@ import { Mail, MailCheck } from 'lucide-react'
 import { useStickyNoteData } from '../../../hooks/useStickyNoteData'
 import { isLoginRequired, loginLabels, redirectToLogin } from '../accountLink'
 import WidgetPlaceholder from '../WidgetPlaceholder'
-import { describeGmailError, gmailInboxUrl, gmailRefreshDelay } from './gmailShared'
+import { describeGmailError, gmailInboxUrl } from './gmailShared'
 
 type GmailUnreadContentProps = {
   noteId: string
+  refreshInterval: number
   columns: number
   rows: number
 }
 
 const countFormat = new Intl.NumberFormat('fr-FR')
 
-function GmailUnreadContent({ noteId, columns, rows }: GmailUnreadContentProps) {
-  const { data, error } = useStickyNoteData<{ unread: number }>(noteId, gmailRefreshDelay)
+function GmailUnreadContent({ noteId, refreshInterval, columns, rows }: GmailUnreadContentProps) {
+  const { data, error } = useStickyNoteData<{ unread: number }>(noteId, refreshInterval * 1000)
 
   if (!data) {
     return (

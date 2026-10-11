@@ -53,7 +53,6 @@ export function useStickyNotes() {
         column < note.column + note.columns,
     )
 
-  // ignoredNoteId permet de ne pas compter le post-it qu'on est en train de déplacer.
   const canPlaceStickyNote = (position: GridPosition, size: StickyNoteSize, ignoredNoteId?: string) => {
     if (position.column < 0 || position.row < 0) return false
     if (position.column + size.columns > gridColumns) return false
@@ -69,15 +68,19 @@ export function useStickyNotes() {
     )
   }
 
-  // Renvoie le post-it créé, ou null si l'enregistrement a échoué.
-  const addStickyNote = async (position: GridPosition, size: StickyNoteSize, content: StickyNoteContent) => {
+  const addStickyNote = async (
+    position: GridPosition,
+    size: StickyNoteSize,
+    content: StickyNoteContent,
+    refreshInterval?: number,
+  ) => {
     if (!stickyNoteWidgetIds || !canPlaceStickyNote(position, size)) return null
 
     setIsSavingStickyNote(true)
     setDashboardError('')
 
     try {
-      const createdNote = await createStickyNote(stickyNoteWidgetIds, position, size, content)
+      const createdNote = await createStickyNote(stickyNoteWidgetIds, position, size, content, refreshInterval)
       setStickyNotes((current) => [...current, createdNote])
       return createdNote
     } catch (error) {
@@ -99,7 +102,6 @@ export function useStickyNotes() {
         current.map((item) => (item.id === noteId ? { ...item, row, column } : item)),
       )
 
-    // On déplace tout de suite à l'écran, et on revient en arrière si l'enregistrement échoue.
     setPosition(position)
     setDashboardError('')
 
@@ -111,7 +113,6 @@ export function useStickyNotes() {
     }
   }
 
-  // Renvoie true si la modification a bien été enregistrée.
   const saveStickyNoteChange = async (noteId: string, changes: Partial<StickyNote>, save: () => Promise<void>) => {
     setIsSavingStickyNote(true)
     setDashboardError('')
@@ -137,11 +138,13 @@ export function useStickyNotes() {
     )
   }
 
-  const changeStickyNoteWidget = async (noteId: string, content: StickyNoteContent) => {
+  const changeStickyNoteWidget = async (noteId: string, content: StickyNoteContent, refreshInterval?: number) => {
     if (!stickyNoteWidgetIds) return false
 
-    return saveStickyNoteChange(noteId, { content }, () =>
-      changeStickyNoteContent(stickyNoteWidgetIds, noteId, content),
+    return saveStickyNoteChange(
+      noteId,
+      refreshInterval === undefined ? { content } : { content, refreshInterval },
+      () => changeStickyNoteContent(stickyNoteWidgetIds, noteId, content, refreshInterval),
     )
   }
 

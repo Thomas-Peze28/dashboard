@@ -12,7 +12,6 @@ describe('OAuth Google Integration Tests', () => {
   });
 
   afterAll(async () => {
-    // Nettoyage en base des comptes créés pendant les tests
     await prisma.user.deleteMany({
       where: { email: { contains: 'oauth_test_' } },
     });
@@ -40,10 +39,8 @@ describe('OAuth Google Integration Tests', () => {
     });
 
     it('devrait créer l\'utilisateur, lier le compte et renvoyer un JWT sur succès', async () => {
-      // Mock des réponses de l'API Google
       const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
-      // 1er appel fetch : échange du code contre les tokens
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -53,7 +50,6 @@ describe('OAuth Google Integration Tests', () => {
         }),
       } as Response);
 
-      // 2e appel fetch : récupération du profil Google
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -68,7 +64,6 @@ describe('OAuth Google Integration Tests', () => {
       expect(res.status).toBe(302);
       expect(res.headers.location).toContain('/auth/callback?token=');
 
-      // Vérification en base de données
       const user = await prisma.user.findUnique({
         where: { email: testEmail },
         include: { accounts: true },
@@ -87,7 +82,6 @@ describe('OAuth Google Integration Tests', () => {
       const existingEmail = `oauth_existing_${Date.now()}@epitech.eu`;
       const secondGoogleId = `google_sub_2_${Date.now()}`;
 
-      // Création préalable d'un utilisateur sans compte OAuth
       await prisma.user.create({
         data: {
           email: existingEmail,
@@ -121,7 +115,6 @@ describe('OAuth Google Integration Tests', () => {
       expect(res.status).toBe(302);
       expect(res.headers.location).toContain('/auth/callback?token=');
 
-      // Vérifie que le compte existant a bien reçu la liaison Account
       const user = await prisma.user.findUnique({
         where: { email: existingEmail },
         include: { accounts: true },
@@ -131,14 +124,12 @@ describe('OAuth Google Integration Tests', () => {
       expect(user?.accounts[0]?.provider).toBe('google');
       expect(user?.accounts[0]?.providerAccountId).toBe(secondGoogleId);
 
-      // Nettoyage de l'utilisateur créé
       await prisma.user.delete({ where: { email: existingEmail } });
     });
 
     it('devrait rediriger vers /login?error=oauth_failed en cas d\'erreur de l\'API Google', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
-      // Simule un échec lors de l'échange de token (ex: code invalide ou expiré)
       fetchSpy.mockResolvedValueOnce({
         ok: false,
         status: 400,

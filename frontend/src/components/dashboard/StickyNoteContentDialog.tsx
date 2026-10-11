@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Clock, CloudSun, Dices, GitBranch, Mail, Search, X } from 'lucide-react'
 import { defaultPokemonLanguage } from '../../constants/pokemon'
+import { getDefaultRefreshInterval, supportsRefresh } from '../../constants/refresh'
 import { localTimezone } from '../../constants/timezones'
 import { defaultForecastDays, getMaxForecastDays } from '../../constants/weather'
 import type { StickyNoteContent, StickyNoteSize } from '../../types/stickyNote'
@@ -8,22 +9,23 @@ import TimezonePicker from './clock/TimezonePicker'
 import GithubOptions, { type GithubMode } from './github/GithubOptions'
 import GmailOptions, { type GmailMode } from './gmail/GmailOptions'
 import PokemonLanguagePicker from './pokemon/PokemonLanguagePicker'
+import RefreshIntervalPicker from './RefreshIntervalPicker'
 import WeatherOptions, { type WeatherMode } from './weather/WeatherOptions'
 
 type StickyNoteContentDialogProps = {
   size: StickyNoteSize
   initialContent?: StickyNoteContent
+  initialRefreshInterval?: number
   backLabel: string
   submitLabel: string
   isSaving: boolean
-  onSelect: (content: StickyNoteContent) => void
+  onSelect: (content: StickyNoteContent, refreshInterval?: number) => void
   onBack: () => void
   onClose: () => void
 }
 
 type WidgetChoice = 'clock' | 'weather' | 'pokemon' | 'pokemonCard' | 'github' | 'gmail'
 
-// Même format que celui attendu par le backend : propriétaire/dépôt.
 const repositoryPattern = /^[\w.-]+\/[\w.-]+$/
 
 const widgetChoices: Array<{ widget: WidgetChoice; label: string; icon: typeof Clock }> = [
@@ -38,6 +40,7 @@ const widgetChoices: Array<{ widget: WidgetChoice; label: string; icon: typeof C
 function StickyNoteContentDialog({
   size,
   initialContent,
+  initialRefreshInterval,
   backLabel,
   submitLabel,
   isSaving,
@@ -49,7 +52,6 @@ function StickyNoteContentDialog({
   const [widget, setWidget] = useState<WidgetChoice>(() => {
     if (!initialContent || initialContent.kind === 'clock') return 'clock'
     if (initialContent.kind === 'pokemonRandom') return 'pokemon'
-    // Une carte gardée en favori vient du tirage aléatoire.
     if (initialContent.kind === 'pokemonCard') return initialContent.cardId ? 'pokemon' : 'pokemonCard'
     if (initialContent.kind === 'weatherCurrent' || initialContent.kind === 'weatherForecast') return 'weather'
     if (initialContent.kind === 'gmailUnread' || initialContent.kind === 'gmailRecent') return 'gmail'
@@ -82,6 +84,9 @@ function StickyNoteContentDialog({
   const [repository, setRepository] = useState(
     initialContent?.kind === 'githubRepo' ? initialContent.repository : '',
   )
+  const [chosenRefreshInterval, setChosenRefreshInterval] = useState<number | null>(
+    initialContent && supportsRefresh(initialContent.kind) ? (initialRefreshInterval ?? null) : null,
+  )
   const canSubmit =
     !isSaving &&
     (widget !== 'github' || githubMode !== 'repo' || repositoryPattern.test(repository.trim())) &&
@@ -97,20 +102,26 @@ function StickyNoteContentDialog({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  const handleSubmit = () => {
-    if (!canSubmit) return
-
-    if (widget === 'clock') onSelect({ kind: 'clock', timezone })
-    else if (widget === 'pokemon') onSelect({ kind: 'pokemonRandom', language })
-    else if (widget === 'gmail') onSelect({ kind: gmailMode === 'recent' ? 'gmailRecent' : 'gmailUnread' })
-    else if (widget === 'github') {
-      if (githubMode === 'profile') onSelect({ kind: 'githubProfile' })
-      else if (githubMode === 'notifications') onSelect({ kind: 'githubNotifications' })
-      else onSelect({ kind: 'githubRepo', repository: repository.trim() })
+  const getContent = (): StickyNoteContent => {
+    if (widget === 'clock') return { kind: 'clock', timezone }
+    if (widget === 'pokemon') return { kind: 'pokemonRandom', language }
+    if (widget === 'pokemonCard') return { kind: 'pokemonCard', language, name: pokemonName.trim() }
+    if (widget === 'gmail') return { kind: gmailMode === 'recent' ? 'gmailRecent' : 'gmailUnread' }
+    if (widget === 'github') {
+      if (githubMode === 'profile') return { kind: 'githubProfile' }
+      if (githubMode === 'notifications') return { kind: 'githubNotifications' }
+      return { kind: 'githubRepo', repository: repository.trim() }
     }
-    else if (widget === 'pokemonCard') onSelect({ kind: 'pokemonCard', language, name: pokemonName.trim() })
-    else if (weatherMode === 'current') onSelect({ kind: 'weatherCurrent', city: city.trim() })
-    else onSelect({ kind: 'weatherForecast', city: city.trim(), days })
+    if (weatherMode === 'current') return { kind: 'weatherCurrent', city: city.trim() }
+    return { kind: 'weatherForecast', city: city.trim(), days }
+  }
+  const content = getContent()
+  const refreshInterval = supportsRefresh(content.kind)
+    ? (chosenRefreshInterval ?? getDefaultRefreshInterval(content.kind))
+    : undefined
+
+  const handleSubmit = () => {
+    if (canSubmit) onSelect(content, refreshInterval)
   }
 
   return (
@@ -215,6 +226,10 @@ function StickyNoteContentDialog({
             onDaysChange={setDays}
             onSubmit={handleSubmit}
           />
+        )}
+
+        {refreshInterval !== undefined && (
+          <RefreshIntervalPicker value={refreshInterval} onChange={setChosenRefreshInterval} />
         )}
 
         <footer className="mt-6 flex items-center justify-between gap-3">

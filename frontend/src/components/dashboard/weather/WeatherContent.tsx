@@ -7,6 +7,7 @@ import type { WeatherCurrentData, WeatherForecastData, WeatherSize } from './wea
 
 type WeatherContentProps = {
   noteId: string
+  refreshInterval: number
   content: Extract<StickyNoteContent, { kind: 'weatherCurrent' | 'weatherForecast' }>
   columns: number
   rows: number
@@ -14,9 +15,7 @@ type WeatherContentProps = {
 
 type WeatherData = WeatherCurrentData | WeatherForecastData
 
-const refreshDelay = 10 * 60 * 1000
-
-function WeatherContent({ noteId, content, columns, rows }: WeatherContentProps) {
+function WeatherContent({ noteId, refreshInterval, content, columns, rows }: WeatherContentProps) {
   const [data, setData] = useState<WeatherData | null>(null)
   const [error, setError] = useState('')
 
@@ -39,13 +38,13 @@ function WeatherContent({ noteId, content, columns, rows }: WeatherContentProps)
     }
 
     void load()
-    const interval = window.setInterval(() => void load(), refreshDelay)
+    const interval = window.setInterval(() => void load(), refreshInterval * 1000)
 
     return () => {
       isCancelled = true
       window.clearInterval(interval)
     }
-  }, [noteId])
+  }, [noteId, refreshInterval])
 
   const size: WeatherSize = columns > rows ? 'large' : columns > 1 ? 'medium' : 'small'
 

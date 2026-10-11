@@ -14,10 +14,8 @@ type ForecastWeatherProps = {
 
 const weekdayFormat = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' })
 
-// Midi évite qu'un décalage horaire fasse basculer la date sur le jour voisin.
 const formatWeekday = (date: string) => weekdayFormat.format(new Date(`${date}T12:00:00`))
 
-// Chaque jour est son propre conteneur : le texte s'adapte à la place qu'il reçoit.
 function ForecastDay({ day, isRow }: { day: WeatherForecastDay; isRow: boolean }) {
   const { label, icon: Icon } = describeWeather(day.weatherCode)
 
@@ -46,8 +44,6 @@ function ForecastDay({ day, isRow }: { day: WeatherForecastDay; isRow: boolean }
 }
 
 function ForecastWeather({ data, size }: ForecastWeatherProps) {
-  // Petit post-it : une ligne par jour, limité à 5 jours (utile après un redimensionnement).
-  // Sinon : une colonne par jour (sur deux rangées au-delà de 5 jours, 4 pour le format carré).
   const isRow = size === 'small'
   const days = isRow ? data.days.slice(0, smallNoteMaxForecastDays) : data.days
   const lines = !isRow && days.length > (size === 'medium' ? 4 : 5) ? 2 : 1

@@ -232,7 +232,6 @@ describe('Gmail widgets Integration Tests', () => {
                 unread: true,
                 url: 'https://mail.google.com/mail/u/0/#inbox/thread1',
             });
-            // Sans nom d'expéditeur, l'adresse est affichée ; les en-têtes sont lus sans tenir compte de la casse.
             expect(res.body.data.emails[1]).toMatchObject({
                 from: 'noreply@github.com',
                 fromEmail: 'noreply@github.com',
