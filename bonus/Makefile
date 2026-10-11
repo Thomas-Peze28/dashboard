@@ -1,3 +1,7 @@
+ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+BONUS := $(ROOT)/bonus
+COMPOSE := docker compose -f $(ROOT)/docker-compose.yml
+
 # ---------------------------------------------------------
 # AIDE
 # ---------------------------------------------------------
@@ -7,64 +11,65 @@ help: ## Affiche la liste des commandes disponibles
 # ---------------------------------------------------------
 # DEV LOCAL
 # ---------------------------------------------------------
-install: ## Installe les dépendances frontend et backend
-	npm --prefix backend install
-	npm --prefix frontend install
+install: ## Installe les dépendances frontend, backend et des outils bonus
+	npm --prefix $(ROOT)/backend install
+	npm --prefix $(ROOT)/frontend install
+	npm --prefix $(BONUS) install
 
 lint: ## Vérifie le formatage et le code (backend & frontend)
-	npm --prefix backend run lint --if-present
-	npm --prefix frontend run lint --if-present
+	npm --prefix $(ROOT)/backend run lint --if-present
+	npm --prefix $(ROOT)/frontend run lint --if-present
 
 typecheck: ## Contrôle le typage TypeScript
-	npm --prefix backend run typecheck
-	npm --prefix frontend run typecheck
+	npm --prefix $(ROOT)/backend run typecheck
+	npm --prefix $(ROOT)/frontend run typecheck
+
+dev: db-up ## Démarre Postgres via Docker puis le backend et frontend en parallèle
+	cd $(BONUS) && npx concurrently -k -p "[{name}]" -n "BACKEND,FRONTEND" -c "blue.bold,cyan.bold" \
+		"npm --prefix $(ROOT)/backend run dev" \
+		"npm --prefix $(ROOT)/frontend run dev"
 
 # ---------------------------------------------------------
 # ORCHESTRATION DOCKER
 # ---------------------------------------------------------
 up: ## Démarre toute l'application via Docker Compose
-	docker compose up -d
+	$(COMPOSE) up -d
 
 down: ## Arrête tous les conteneurs Docker
-	docker compose down
+	$(COMPOSE) down
 
 build: ## Recompile les images Docker
-	docker compose build
+	$(COMPOSE) build
 
 logs: ## Affiche les logs de tous les services en temps réel
-	docker compose logs -f
+	$(COMPOSE) logs -f
 
 clean: ## Supprime conteneurs, volumes orphelins et images inutilisées
-	docker compose down -v --remove-orphans
+	$(COMPOSE) down -v --remove-orphans
 	docker image prune -f
 
 # ---------------------------------------------------------
 # BDD
 # ---------------------------------------------------------
-db-up: ## Démarre uniquement le conteneur PostgreSQL
-	docker compose up -d db
+db-up: ## Démarre uniquement les conteneurs PostgreSQL et Mailpit
+	$(COMPOSE) up -d db mailpit
 
 db-down: ## Arrête le conteneur PostgreSQL
-	docker compose stop db
+	$(COMPOSE) stop db
 
 db-migrate: ## Crée et applique une migration Prisma à partir du schéma (synchronise la base de données avec le schéma)
-	npm --prefix backend run db:migrate
+	npm --prefix $(ROOT)/backend run db:migrate
 
 db-generate: ## Régénère le client TypeScript Prisma (permet d'utiliser la base de données dans le code)
-	npm --prefix backend run db:generate
+	npm --prefix $(ROOT)/backend run db:generate
+
+db-seed: ## Initialise le catalogue des services et widgets en base
+	npm --prefix $(ROOT)/backend run db:seed
 
 db-studio: ## Ouvre l'interface visuelle Prisma Studio (port 5555)
-	npm --prefix backend run db:studio
+	npm --prefix $(ROOT)/backend run db:studio
 
 db-reset: ## Réinitialise complètement la base (supprime toutes les données)
-	npm --prefix backend run db:reset
+	npm --prefix $(ROOT)/backend run db:reset
 
-dev: db-up ## Démarre Postgres via Docker puis le backend et frontend en parallèle
-	npx concurrently -k -p "[{name}]" -n "BACKEND,FRONTEND" -c "blue.bold,cyan.bold" \
-		"npm --prefix backend run dev" \
-		"npm --prefix frontend run dev"
-
-.PHONY: help install dev up down build logs clean lint typecheck db-up db-down db-migrate db-generate db-studio db-reset db-seed
-db-seed: ## Initialise le catalogue des services et widgets en base
-	npm --prefix backend run db:seed
-.PHONY: help install dev up down build logs clean lint typecheck db-up db-down db-migrate db-generate db-studio db-reset dev
+.PHONY: help install lint typecheck dev up down build logs clean db-up db-down db-migrate db-generate db-seed db-studio db-reset
