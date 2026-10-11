@@ -181,6 +181,7 @@ function StickyNoteCard({ note, isDeleting, canMoveTo, onMove, onEdit, onChangeC
           />
         ) : note.content.kind === 'githubProfile' ? (
           <GithubProfileContent
+            key={note.content.username}
             noteId={note.id}
             refreshInterval={note.refreshInterval}
             columns={note.columns}

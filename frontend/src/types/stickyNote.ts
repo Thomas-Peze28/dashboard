@@ -15,7 +15,7 @@ export type StickyNoteContent =
   | { kind: 'weatherCurrent'; city: string }
   | { kind: 'weatherForecast'; city: string; days: number }
   | { kind: 'pokemonRandom'; language: PokemonLanguage }
-  | { kind: 'githubProfile' }
+  | { kind: 'githubProfile'; username: string }
   | { kind: 'githubRepo'; repository: string }
   | { kind: 'githubNotifications'; limit: number }
   | { kind: 'gmailUnread' }

@@ -48,7 +48,9 @@ function toContent(widgetName: string, config: Record<string, unknown> | null): 
   if (widgetName === catalogNames.clock) {
     return { kind: 'clock', timezone: isValidTimezone(config?.timezone) ? config.timezone : 'UTC' }
   }
-  if (widgetName === catalogNames.githubProfile) return { kind: 'githubProfile' }
+  if (widgetName === catalogNames.githubProfile) {
+    return { kind: 'githubProfile', username: typeof config?.username === 'string' ? config.username.trim() : '' }
+  }
   if (widgetName === catalogNames.gmailUnread) return { kind: 'gmailUnread' }
 
   const limit = Number(config?.limit)
@@ -106,6 +108,8 @@ function toConfig(content: StickyNoteContent) {
     case 'pokemonRandom':
       return { language: content.language }
     case 'githubProfile':
+      // Sans nom d'utilisateur, le backend affiche le profil du compte GitHub relié.
+      return content.username ? { username: content.username } : {}
     case 'gmailUnread':
       return {}
     case 'gmailRecent':

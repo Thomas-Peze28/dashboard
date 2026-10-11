@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Clock, CloudSun, Dices, GitBranch, Mail, Search, X } from 'lucide-react'
-import { defaultGithubNotificationsLimit } from '../../constants/github'
+import { defaultGithubNotificationsLimit, githubUsernamePattern } from '../../constants/github'
 import { defaultGmailRecentLimit, getMaxGmailRecentLimit } from '../../constants/gmail'
 import { defaultPokemonLanguage } from '../../constants/pokemon'
 import { getDefaultRefreshInterval, supportsRefresh } from '../../constants/refresh'
@@ -90,6 +90,9 @@ function StickyNoteContentDialog({
   const [notificationsLimit, setNotificationsLimit] = useState(
     initialContent?.kind === 'githubNotifications' ? initialContent.limit : defaultGithubNotificationsLimit,
   )
+  const [githubUsername, setGithubUsername] = useState(
+    initialContent?.kind === 'githubProfile' ? initialContent.username : '',
+  )
   const [repository, setRepository] = useState(
     initialContent?.kind === 'githubRepo' ? initialContent.repository : '',
   )
@@ -99,6 +102,10 @@ function StickyNoteContentDialog({
   const canSubmit =
     !isSaving &&
     (widget !== 'github' || githubMode !== 'repo' || repositoryPattern.test(repository.trim())) &&
+    (widget !== 'github' ||
+      githubMode !== 'profile' ||
+      githubUsername.trim() === '' ||
+      githubUsernamePattern.test(githubUsername.trim())) &&
     (widget !== 'weather' || city.trim() !== '') &&
     (widget !== 'pokemonCard' || pokemonName.trim() !== '')
 
@@ -119,7 +126,7 @@ function StickyNoteContentDialog({
       return gmailMode === 'recent' ? { kind: 'gmailRecent', limit: emailsLimit } : { kind: 'gmailUnread' }
     }
     if (widget === 'github') {
-      if (githubMode === 'profile') return { kind: 'githubProfile' }
+      if (githubMode === 'profile') return { kind: 'githubProfile', username: githubUsername.trim() }
       if (githubMode === 'notifications') return { kind: 'githubNotifications', limit: notificationsLimit }
       return { kind: 'githubRepo', repository: repository.trim() }
     }
@@ -205,9 +212,11 @@ function StickyNoteContentDialog({
           <GithubOptions
             mode={githubMode}
             repository={repository}
+            username={githubUsername}
             notificationsLimit={notificationsLimit}
             onModeChange={setGithubMode}
             onRepositoryChange={setRepository}
+            onUsernameChange={setGithubUsername}
             onNotificationsLimitChange={setNotificationsLimit}
             onSubmit={handleSubmit}
           />

@@ -6,15 +6,17 @@ export type GithubMode = 'profile' | 'repo' | 'notifications'
 type GithubOptionsProps = {
   mode: GithubMode
   repository: string
+  username: string
   notificationsLimit: number
   onModeChange: (mode: GithubMode) => void
   onRepositoryChange: (repository: string) => void
+  onUsernameChange: (username: string) => void
   onNotificationsLimitChange: (limit: number) => void
   onSubmit: () => void
 }
 
 const modeChoices: Array<{ mode: GithubMode; label: string; description: string }> = [
-  { mode: 'profile', label: 'Profil', description: 'Affiche votre profil GitHub.' },
+  { mode: 'profile', label: 'Profil', description: 'Affiche un profil GitHub : le vôtre, ou celui d’un autre utilisateur.' },
   { mode: 'repo', label: 'Dépôt', description: 'Affiche les statistiques d’un dépôt.' },
   { mode: 'notifications', label: 'Notifications', description: 'Affiche vos notifications GitHub non lues.' },
 ]
@@ -22,9 +24,11 @@ const modeChoices: Array<{ mode: GithubMode; label: string; description: string 
 function GithubOptions({
   mode,
   repository,
+  username,
   notificationsLimit,
   onModeChange,
   onRepositoryChange,
+  onUsernameChange,
   onNotificationsLimitChange,
   onSubmit,
 }: GithubOptionsProps) {
@@ -49,6 +53,28 @@ function GithubOptions({
           )
         })}
       </div>
+
+      {mode === 'profile' && (
+        <>
+          <label htmlFor="github-username" className="mt-4 block text-sm font-medium text-gray-800">
+            Utilisateur GitHub <span className="font-normal text-gray-500">(facultatif)</span>
+          </label>
+          <input
+            id="github-username"
+            type="text"
+            value={username}
+            autoFocus
+            autoComplete="off"
+            placeholder="torvalds"
+            onChange={(event) => onUsernameChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') onSubmit()
+            }}
+            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600"
+          />
+          <p className="mt-1 text-xs text-gray-500">Laissez vide pour afficher votre propre profil.</p>
+        </>
+      )}
 
       {mode === 'repo' && (
         <>
