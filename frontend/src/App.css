@@ -120,27 +120,6 @@ input {
   box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.06);
 }
 
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: #4b5563;
-  font-size: 0.84rem;
-}
-
-.remember-me {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-direction: row !important;
-}
-
-.remember-me input {
-  accent-color: #111827;
-}
-
-.form-row a,
 .register-link a,
 .text-link-button {
   color: #111827;
@@ -256,7 +235,6 @@ input {
     padding: 28px 24px 34px;
   }
 
-  .form-row,
   .social-actions {
     grid-template-columns: 1fr;
     display: grid;

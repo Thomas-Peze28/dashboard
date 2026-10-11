@@ -171,14 +171,6 @@ function LoginPage() {
                 />
               </label>
 
-              <div className="form-row">
-                <label className="remember-me">
-                  <input type="checkbox" />
-                  <span>Se souvenir de moi</span>
-                </label>
-                <a href="#">Mot de passe oublié ?</a>
-              </div>
-
               {error && <p className="message error" role="alert">{error}</p>}
               {success && <p className="message success" role="status">{success}</p>}
 

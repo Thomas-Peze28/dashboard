@@ -136,7 +136,7 @@ export async function fetchStickyNotes(): Promise<{ widgetIds: StickyNoteWidgetI
     const definition = catalog.find((widget) => widget.name === name)
 
     if (!definition) {
-      throw new Error(`Le catalogue ${name} est absent. Lancez make db-seed.`)
+      throw new Error(`Le catalogue ${name} est absent. Relancez le backend pour le remplir.`)
     }
 
     return definition.id
