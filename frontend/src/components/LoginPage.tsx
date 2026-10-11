@@ -13,9 +13,7 @@ function LoginPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(() =>
-    new URLSearchParams(window.location.search).has('error')
-      ? 'La connexion Google a échoué. Veuillez réessayer.'
-      : '',
+    new URLSearchParams(window.location.search).has('error') ? 'La connexion a échoué. Veuillez réessayer.' : '',
   )
   const [success, setSuccess] = useState('')
 

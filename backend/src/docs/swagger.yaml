@@ -809,6 +809,30 @@ paths:
         '302':
           description: Redirects to Google's authorization page
 
+  /api/auth/google/link:
+    post:
+      summary: Get the Google authorization URL to link a Google account to the connected user
+      description: |
+        The frontend calls this route with its JWT, then sends the browser to the returned URL.
+        On return, the Google account is linked to the connected user, even if its e-mail is different.
+      tags: [OAuth]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Authorization URL, with a signed state containing the connected user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  url:
+                    type: string
+                    format: uri
+        '401':
+          description: Authentication is required or the token is invalid
+
   /api/auth/google/callback:
     get:
       summary: Handle the Google OAuth callback
@@ -820,9 +844,17 @@ paths:
           schema:
             type: string
           description: Authorization code returned by Google
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Signed state created by the server (valid 10 minutes); it contains the user to link the account to, if any
       responses:
         '302':
-          description: Redirects to the frontend with a JWT or an OAuth error
+          description: |
+            Sign-in: redirects to `/auth/callback?token=<JWT>`, or `/login?error=…` (missing code, invalid state, Google error).
+            Linking: redirects to `/dashboard`, or `/dashboard?error=account_already_linked` when the Google account already belongs to another user.
 
   /api/auth/github:
     get:
@@ -831,6 +863,30 @@ paths:
       responses:
         '302':
           description: Redirects to GitHub's authorization page
+
+  /api/auth/github/link:
+    post:
+      summary: Get the GitHub authorization URL to link a GitHub account to the connected user
+      description: |
+        The frontend calls this route with its JWT, then sends the browser to the returned URL.
+        On return, the GitHub account is linked to the connected user, even if its e-mail is different.
+      tags: [OAuth]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Authorization URL, with a signed state containing the connected user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  url:
+                    type: string
+                    format: uri
+        '401':
+          description: Authentication is required or the token is invalid
 
   /api/auth/github/callback:
     get:
@@ -843,9 +899,17 @@ paths:
           schema:
             type: string
           description: Authorization code returned by GitHub
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Signed state created by the server (valid 10 minutes); it contains the user to link the account to, if any
       responses:
         '302':
-          description: Redirects to the frontend with a JWT or an OAuth error
+          description: |
+            Sign-in: redirects to `/auth/callback?token=<JWT>`, or `/login?error=…` (missing code, invalid state, GitHub error).
+            Linking: redirects to `/dashboard`, or `/dashboard?error=account_already_linked` when the GitHub account already belongs to another user.
 
   /api/users/me:
     get:

@@ -197,6 +197,12 @@ sequenceDiagram
 
 ### 4.2 Connexion et liaison OAuth (Google, GitHub)
 
+Le même flux OAuth sert à deux choses :
+- **se connecter** depuis la page de connexion (bouton « Continuer avec Google ») ;
+- **relier** un compte GitHub ou Google à l'utilisateur déjà connecté, depuis un widget GitHub ou Gmail.
+
+Pour savoir lequel des deux est en cours au retour du fournisseur, le backend envoie un paramètre **`state`** : un jeton signé (`services/oauth/oauthState.ts`), valable 10 minutes, qui contient l'utilisateur à relier quand il s'agit d'une liaison.
+
 ```mermaid
 sequenceDiagram
     participant U as Navigateur
@@ -204,18 +210,37 @@ sequenceDiagram
     participant P as Google / GitHub
     participant DB as PostgreSQL
 
-    U->>B: GET /api/auth/google
-    B-->>U: redirection vers la page d'autorisation du fournisseur
+    alt Connexion (page de connexion)
+        U->>B: GET /api/auth/google
+        B-->>U: redirection vers le fournisseur, avec un state sans utilisateur
+    else Liaison (depuis un widget, utilisateur connecté)
+        U->>B: POST /api/auth/github/link (JWT)
+        B-->>U: { url } : adresse du fournisseur, avec un state contenant l'utilisateur connecté
+    end
     U->>P: l'utilisateur accepte
-    P-->>U: redirection vers /api/auth/google/callback?code=…
-    U->>B: GET /api/auth/google/callback?code=…
+    P-->>U: redirection vers /api/auth/…/callback?code=…&state=…
+    U->>B: GET /api/auth/…/callback?code=…&state=…
+    B->>B: vérifie la signature et l'expiration du state
     B->>P: échange du code contre un token d'accès (+ refresh token pour Google)
-    B->>P: profil de l'utilisateur (e-mail)
-    B->>DB: crée l'utilisateur ou le retrouve par e-mail, puis crée ou met à jour l'Account
-    B-->>U: redirection vers le frontend /auth/callback?token=<JWT>
+    B->>P: profil de l'utilisateur
+    B->>DB: rattache le compte tiers (voir les règles ci-dessous)
+    alt Connexion
+        B-->>U: redirection vers /auth/callback?token=<JWT>
+    else Liaison
+        B-->>U: redirection vers /dashboard (la session reste la même)
+    end
 ```
 
-- **Liaison des comptes** : si l'e-mail du compte Google ou GitHub correspond à un utilisateur existant, le compte tiers lui est rattaché (`syncOAuthUserAndSignJwt` dans `services/oauth/oauth.shared.ts`) ; aucun doublon n'est créé.
+**Règles de rattachement** (`syncOAuthUserAndSignJwt` dans `services/oauth/oauth.shared.ts`), dans cet ordre :
+
+| Situation | Résultat |
+|---|---|
+| Liaison depuis le tableau | Le compte tiers est rattaché à l'utilisateur connecté, **quel que soit son e-mail**. S'il appartient déjà à un autre utilisateur, la liaison est refusée (`/dashboard?error=account_already_linked`) |
+| Connexion avec un compte tiers déjà relié | Ouverture de la session de l'utilisateur auquel il appartient |
+| Première connexion avec ce compte tiers | L'utilisateur est retrouvé par son e-mail, ou créé s'il n'existe pas |
+
+Le `state` est signé avec une clé dérivée de `JWT_SECRET` mais différente : un `state` ne peut pas servir de session, ni une session de `state`. Un callback sans `state` valide est refusé (`/login?error=oauth_failed`).
+
 - **Tokens tiers** : ils restent dans la table `accounts` et ne sont jamais envoyés au navigateur.
 - **Renouvellement Google** : un token Google expire après une heure. Avant chaque appel, `getGoogleToken` (`services/widgets/google/googleApi.ts`) vérifie son expiration et le renouvelle avec le `refresh_token` si besoin. Les tokens GitHub n'expirent pas.
 

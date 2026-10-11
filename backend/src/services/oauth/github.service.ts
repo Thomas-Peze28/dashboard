@@ -6,9 +6,10 @@ const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || 'http://localhost
 
 /**
 * Generates the GitHub authentication URL.
+* @param state The signed OAuth state, checked when GitHub redirects back.
 * @returns The GitHub authentication URL.
 **/
-export const getGithubAuthUrl = (): string => {
+export const getGithubAuthUrl = (state: string): string => {
 
   const rootUrl = 'https://github.com/login/oauth/authorize';
 
@@ -16,6 +17,7 @@ export const getGithubAuthUrl = (): string => {
     client_id: GITHUB_CLIENT_ID,
     redirect_uri: GITHUB_REDIRECT_URI,
     scope: 'read:user user:email repo',
+    state,
   };
 
   return `${rootUrl}?${new URLSearchParams(options).toString()}`;
@@ -57,9 +59,10 @@ interface GithubEmailResponse {
 /**
 * Handles the GitHub OAuth callback.
 * @param code The authorization code.
+* @param linkUserId The connected user to link the GitHub account to (null for a simple sign-in).
 * @returns A promise resolving to the signed JWT.
 **/
-export const handleGithubCallback = async (code: string): Promise<string> => {
+export const handleGithubCallback = async (code: string, linkUserId: string | null): Promise<string> => {
 
   const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
@@ -122,5 +125,5 @@ export const handleGithubCallback = async (code: string): Promise<string> => {
     name: githubUser.name ?? githubUser.login,
     accessToken: tokenData.access_token,
     refreshToken: null,
-  });
+  }, linkUserId);
 };

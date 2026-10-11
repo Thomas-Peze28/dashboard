@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../app.js';
 import { prisma } from '../lib/prisma.js';
+import { createOAuthState } from '../services/oauth/oauthState.js';
+
+// State valide d'une simple connexion (sans utilisateur à relier).
+const signInState = () => encodeURIComponent(createOAuthState());
 
 describe('OAuth Google Integration Tests', () => {
   const testEmail = `oauth_test_${Date.now()}@epitech.eu`;
@@ -28,6 +32,7 @@ describe('OAuth Google Integration Tests', () => {
       expect(res.headers.location).toContain('https://accounts.google.com/o/oauth2/v2/auth');
       expect(res.headers.location).toContain('response_type=code');
       expect(res.headers.location).toContain('scope=');
+      expect(new URL(res.headers.location ?? '').searchParams.get('state')).toBeTruthy();
     });
   });
 
@@ -63,7 +68,7 @@ describe('OAuth Google Integration Tests', () => {
         }),
       } as Response);
 
-      const res = await request(app).get('/api/auth/google/callback?code=valid_fake_code');
+      const res = await request(app).get(`/api/auth/google/callback?code=valid_fake_code&state=${signInState()}`);
 
       expect(res.status).toBe(302);
       expect(res.headers.location).toContain('/auth/callback?token=');
@@ -116,7 +121,7 @@ describe('OAuth Google Integration Tests', () => {
         }),
       } as Response);
 
-      const res = await request(app).get('/api/auth/google/callback?code=another_fake_code');
+      const res = await request(app).get(`/api/auth/google/callback?code=another_fake_code&state=${signInState()}`);
 
       expect(res.status).toBe(302);
       expect(res.headers.location).toContain('/auth/callback?token=');
@@ -145,7 +150,7 @@ describe('OAuth Google Integration Tests', () => {
         json: async () => ({ error: 'invalid_grant' }),
       } as Response);
 
-      const res = await request(app).get('/api/auth/google/callback?code=bad_code');
+      const res = await request(app).get(`/api/auth/google/callback?code=bad_code&state=${signInState()}`);
 
       expect(res.status).toBe(302);
       expect(res.headers.location).toContain('/login?error=oauth_failed');

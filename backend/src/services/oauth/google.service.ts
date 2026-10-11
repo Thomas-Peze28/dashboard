@@ -6,9 +6,10 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost
 
 /**
 * Generates the Google authentication URL.
+* @param state The signed OAuth state, checked when Google redirects back.
 * @returns The Google authentication URL.
 **/
-export const getGoogleAuthUrl = (): string => {
+export const getGoogleAuthUrl = (state: string): string => {
   const rootUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
   const options = {
     redirect_uri: GOOGLE_REDIRECT_URI,
@@ -16,6 +17,7 @@ export const getGoogleAuthUrl = (): string => {
     access_type: 'offline',
     response_type: 'code',
     prompt: 'consent',
+    state,
     scope: [
       'https://www.googleapis.com/auth/userinfo.profile',
       'https://www.googleapis.com/auth/userinfo.email',
@@ -52,9 +54,10 @@ interface GoogleUserResponse {
 /**
 * Handles the Google OAuth callback.
 * @param code The authorization code.
+* @param linkUserId The connected user to link the Google account to (null for a simple sign-in).
 * @returns The JWT token.
 **/
-export const handleGoogleCallback = async (code: string): Promise<string> => {
+export const handleGoogleCallback = async (code: string, linkUserId: string | null): Promise<string> => {
 
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -92,5 +95,5 @@ export const handleGoogleCallback = async (code: string): Promise<string> => {
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token ?? null,
     expiresIn: tokenData.expires_in,
-  });
+  }, linkUserId);
 };

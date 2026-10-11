@@ -18,72 +18,68 @@ export interface OAuthUserProfile {
 /**
 * Synchronise an OAuth user profile with the database and generate a session JWT.
 * @param profile The OAuth user profile.
+* @param linkUserId The connected user to link the third-party account to (null for a simple sign-in).
 * @returns The generated JWT token.
 **/
-export const syncOAuthUserAndSignJwt = async (profile: OAuthUserProfile): Promise<string> => {
+export const syncOAuthUserAndSignJwt = async (profile: OAuthUserProfile, linkUserId: string | null = null): Promise<string> => {
 
   const expiresAt = profile.expiresIn ? Math.floor(Date.now() / 1000) + profile.expiresIn : null;
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email: profile.email },
-    include: { accounts: true },
+  const linkedAccount = await prisma.account.findUnique({
+    where: {
+      provider_providerAccountId: { provider: profile.provider, providerAccountId: profile.providerAccountId },
+    },
   });
 
-  let currentUserId: string;
-  let currentUserRole: string;
+  let userId: string;
 
-  if (!existingUser) {
-    const newUser = await prisma.user.create({
+  if (linkUserId) {
+  
+    if (linkedAccount && linkedAccount.userId !== linkUserId) {
+      throw new Error('OAUTH_ACCOUNT_ALREADY_LINKED');
+    }
+    userId = linkUserId;
+
+    await prisma.account.deleteMany({
+      where: { userId, provider: profile.provider, NOT: { providerAccountId: profile.providerAccountId } },
+    });
+  } else if (linkedAccount) {
+    userId = linkedAccount.userId;
+  } else {
+    const user = await prisma.user.findUnique({ where: { email: profile.email } }) ?? await prisma.user.create({ data: { email: profile.email, name: profile.name ?? null, isVerified: true } });
+    userId = user.id;
+  }
+
+  if (linkedAccount) {
+    await prisma.account.update({
+      where: { id: linkedAccount.id },
       data: {
-        email: profile.email,
-        name: profile.name ?? null,
-        isVerified: true,
-        accounts: {
-          create: {
-            provider: profile.provider,
-            providerAccountId: profile.providerAccountId,
-            accessToken: profile.accessToken,
-            refreshToken: profile.refreshToken ?? null,
-            expiresAt,
-          },
-        },
+        accessToken: profile.accessToken,
+        refreshToken: profile.refreshToken ?? linkedAccount.refreshToken,
+        expiresAt,
       },
     });
-    currentUserId = newUser.id;
-    currentUserRole = newUser.role;
   } else {
-    currentUserId = existingUser.id;
-    currentUserRole = existingUser.role;
+    await prisma.account.create({
+      data: {
+        userId,
+        provider: profile.provider,
+        providerAccountId: profile.providerAccountId,
+        accessToken: profile.accessToken,
+        refreshToken: profile.refreshToken ?? null,
+        expiresAt,
+      },
+    });
+  }
 
-    const existingAccount = existingUser.accounts.find(
-      (acc) => acc.provider === profile.provider && acc.providerAccountId === profile.providerAccountId
-    );
+  const user = await prisma.user.findUnique({ where: { id: userId } });
 
-    if (existingAccount) {
-      await prisma.account.update({
-        where: { id: existingAccount.id },
-        data: {
-          accessToken: profile.accessToken,
-          refreshToken: profile.refreshToken ?? existingAccount.refreshToken,
-          expiresAt,
-        },
-      });
-    } else {
-      await prisma.account.create({
-        data: {
-          userId: existingUser.id,
-          provider: profile.provider,
-          providerAccountId: profile.providerAccountId,
-          accessToken: profile.accessToken,
-          refreshToken: profile.refreshToken ?? null,
-          expiresAt,
-        },
-      });
-    }
+  if (!user) {
+    throw new Error('USER_NOT_FOUND');
   }
 
   return jwt.sign(
-    { userId: currentUserId, role: currentUserRole },
+    { userId: user.id, role: user.role },
     JWT_SECRET,
     { expiresIn: '24h' }
   );

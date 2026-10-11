@@ -3,7 +3,7 @@ import liegeImage from '../../assets/liege.jpg'
 import { gridColumns, gridRows } from '../../constants/grid'
 import { useStickyNotes } from '../../hooks/useStickyNotes'
 import type { GridPosition, StickyNoteContent, StickyNoteSize } from '../../types/stickyNote'
-import { getAccountProvider, needsLogin, redirectToLogin } from './accountLink'
+import { getAccountProvider, linkErrorMessages, needsLogin, redirectToLogin } from './accountLink'
 import GridCell from './GridCell'
 import LogoutButton from './LogoutButton'
 import StickyNoteCard from './StickyNoteCard'
@@ -17,6 +17,13 @@ function Dashboard() {
   const [pendingCell, setPendingCell] = useState<GridPosition | null>(null)
   const [pendingSize, setPendingSize] = useState<StickyNoteSize | null>(null)
   const [editState, setEditState] = useState<EditState | null>(null)
+  // Erreur renvoyée par le backend après une liaison GitHub / Google qui a échoué.
+  const [linkError] = useState(() => {
+    const error = new URLSearchParams(window.location.search).get('error')
+
+    if (error) window.history.replaceState({}, document.title, window.location.pathname)
+    return error ? (linkErrorMessages[error] ?? linkErrorMessages.oauth_failed) : ''
+  })
   const {
     stickyNotes,
     canAddStickyNote,
@@ -100,12 +107,12 @@ function Dashboard() {
         ))}
       </div>
       <LogoutButton />
-      {dashboardError && (
+      {(dashboardError || linkError) && (
         <p
           role="alert"
           className="fixed bottom-4 left-4 z-40 max-w-[calc(100%-2rem)] rounded-md bg-white/95 px-4 py-3 text-sm text-red-800 shadow-lg"
         >
-          {dashboardError}
+          {dashboardError || linkError}
         </p>
       )}
       {pendingCell && !pendingSize && (

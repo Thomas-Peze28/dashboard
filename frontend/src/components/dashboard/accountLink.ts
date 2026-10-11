@@ -1,4 +1,4 @@
-import { apiBaseUrl } from '../../api/client'
+import { apiBaseUrl, authHeaders } from '../../api/client'
 import { fetchStickyNoteData } from '../../api/stickyNotes'
 import type { StickyNoteContent } from '../../types/stickyNote'
 
@@ -21,8 +21,29 @@ export const isLoginRequired = (provider: AccountProvider, error: string | null)
   )
 }
 
+// Relie le compte GitHub / Google à l'utilisateur connecté : le backend renvoie l'adresse d'autorisation,
+// qui permet de rattacher le compte même si son e-mail est différent. Sans session, simple connexion.
 export const redirectToLogin = (provider: AccountProvider) => {
-  window.location.href = `${apiBaseUrl}/api/auth/${provider}`
+  void (async () => {
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/${provider}/link`, { method: 'POST', headers: authHeaders() })
+      const data = (await response.json()) as { url?: string }
+
+      if (response.ok && data.url) {
+        window.location.href = data.url
+        return
+      }
+    } catch {
+      // Pas de session valide : on passe par la connexion classique ci-dessous.
+    }
+    window.location.href = `${apiBaseUrl}/api/auth/${provider}`
+  })()
+}
+
+// Messages affichés au retour d'une liaison qui a échoué (paramètre ?error= de l'adresse).
+export const linkErrorMessages: Record<string, string> = {
+  account_already_linked: 'Ce compte est déjà relié à un autre utilisateur du Dashboard.',
+  oauth_failed: 'La liaison du compte a échoué. Veuillez réessayer.',
 }
 
 export const getAccountProvider = (content: StickyNoteContent): AccountProvider | null => {

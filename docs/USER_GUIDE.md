@@ -122,7 +122,9 @@ Au clavier : `Tab` pour atteindre une case ou un post-it, `Entrée` pour l'ouvri
 
 Les widgets GitHub et Gmail lisent **vos** données : ils ont besoin de votre autorisation.
 
-- Lorsque vous ajoutez un de ces widgets sans avoir relié le compte, vous êtes redirigé vers GitHub ou Google pour autoriser le Dashboard.
+- Lorsque vous ajoutez un de ces widgets sans avoir relié le compte, vous êtes redirigé vers GitHub ou Google pour autoriser le Dashboard, puis vous revenez sur votre tableau.
+- Le compte GitHub ou Google est relié à **votre** compte Dashboard, même s'il utilise une autre adresse e-mail.
+- Un compte GitHub ou Google ne peut être relié qu'à un seul utilisateur du Dashboard. S'il l'est déjà à quelqu'un d'autre, le message « Ce compte est déjà relié à un autre utilisateur du Dashboard. » s'affiche.
 - Si l'autorisation expire ou est retirée, le post-it propose un bouton pour vous reconnecter.
 
 Les autorisations demandées sont limitées au nécessaire :

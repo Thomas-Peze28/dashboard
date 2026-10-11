@@ -42,10 +42,12 @@ Sans token valide, la réponse est `401`. Un token est valable 24 heures.
 | POST | `/api/auth/register` | Non | Crée un compte et envoie l'e-mail de confirmation. Corps : `{ email, password, name? }` ; mot de passe d'au moins 8 caractères |
 | GET | `/api/auth/confirm/{token}` | Non | Confirme l'adresse (lien de l'e-mail), puis redirige vers le frontend |
 | POST | `/api/auth/login` | Non | Connexion. Corps : `{ email, password }`. Renvoie `{ token, user }` |
-| GET | `/api/auth/google` | Non | Redirige vers l'autorisation Google |
-| GET | `/api/auth/google/callback` | Non | Retour de Google : crée ou relie le compte, puis redirige vers le frontend avec le JWT |
-| GET | `/api/auth/github` | Non | Redirige vers l'autorisation GitHub |
-| GET | `/api/auth/github/callback` | Non | Retour de GitHub : crée ou relie le compte, puis redirige vers le frontend avec le JWT |
+| GET | `/api/auth/google` | Non | Connexion : redirige vers l'autorisation Google |
+| POST | `/api/auth/google/link` | Oui | Liaison : renvoie `{ url }`, l'adresse d'autorisation Google qui reliera le compte à l'utilisateur connecté |
+| GET | `/api/auth/google/callback` | Non | Retour de Google : vérifie le `state`, crée ou relie le compte, puis redirige vers le frontend |
+| GET | `/api/auth/github` | Non | Connexion : redirige vers l'autorisation GitHub |
+| POST | `/api/auth/github/link` | Oui | Liaison : renvoie `{ url }`, l'adresse d'autorisation GitHub qui reliera le compte à l'utilisateur connecté |
+| GET | `/api/auth/github/callback` | Non | Retour de GitHub : vérifie le `state`, crée ou relie le compte, puis redirige vers le frontend |
 
 ### Utilisateur, catalogue et widgets
 
