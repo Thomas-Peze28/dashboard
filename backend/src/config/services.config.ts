@@ -111,7 +111,7 @@ export const AVAILABLE_SERVICES: ServiceConfig[] = [
                     {
                         name: 'limit',
                         type: 'integer',
-                        description: 'Maximum number of notifications to display (1 to 50)',
+                        description: 'Maximum number of notifications to display (1 to 8)',
                     },
                 ],
             },

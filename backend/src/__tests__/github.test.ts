@@ -367,10 +367,10 @@ describe('GitHub widgets Integration Tests', () => {
         });
 
         it.each([
-            [100, '50'],
+            [100, '8'],
             [0, '1'],
-            ['abc', '10'],
-            [undefined, '10'],
+            ['abc', '8'],
+            [undefined, '8'],
         ])('limit = %j devrait demander per_page=%s', async (limit, perPage) => {
             await setLimit(limit);
             const fetchMock = mockGithub([]);

@@ -2,8 +2,8 @@
 export const githubUsernamePattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,38}$/
 
 export const minGithubNotificationsLimit = 1
-export const maxGithubNotificationsLimit = 50
-export const defaultGithubNotificationsLimit = 50
+export const maxGithubNotificationsLimit = 8
+export const defaultGithubNotificationsLimit = 8
 
 export const clampGithubNotificationsLimit = (limit: number) =>
   Math.min(Math.max(limit, minGithubNotificationsLimit), maxGithubNotificationsLimit)

@@ -1,7 +1,7 @@
 import { getGithubToken, githubFetch } from './githubApi.js';
 
-const DEFAULT_LIMIT = 10;
-const MAX_LIMIT = 50;
+const DEFAULT_LIMIT = 8;
+const MAX_LIMIT = 8;
 
 /**
 * A notification from the GitHub notifications API.

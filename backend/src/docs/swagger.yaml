@@ -1484,7 +1484,7 @@ paths:
     get:
       summary: Unread GitHub notifications of the user
       description: |
-        Configuration (`config` of the UserWidget): `{ "limit": 10 }` (10 by default, clamped between 1 and 50).
+        Configuration (`config` of the UserWidget): `{ "limit": 8 }` (8 by default, clamped between 1 and 8).
         Requires a GitHub account linked to the user, signed in with the `repo` scope.
       operationId: getWidgetData_github_notifications
       tags: ['Widget - GitHub']

@@ -94,7 +94,7 @@ La carte dont le nom correspond exactement est préférée ; sinon, la première
 Nécessite un compte GitHub relié (voir [section 7](#7-relier-github-et-google)). Trois modes :
 - **Profil** : un profil GitHub (abonnés, dépôts publics…). Saisissez le nom d'un utilisateur ou d'une organisation (par exemple `torvalds`), ou laissez le champ vide pour afficher votre propre profil ;
 - **Dépôt** : les statistiques d'un dépôt, à saisir sous la forme `propriétaire/dépôt` (par exemple `facebook/react`) ;
-- **Notifications** : vos notifications GitHub non lues. Un curseur règle le nombre maximum de notifications récupérées (1 à 50) ; au-delà, le compteur affiche par exemple « 50+ ».
+- **Notifications** : vos notifications GitHub non lues. Un curseur règle le nombre maximum de notifications récupérées (1 à 8) ; au-delà, le compteur affiche par exemple « 8+ ».
 
 ### Gmail
 Nécessite un compte Google relié. Deux modes :

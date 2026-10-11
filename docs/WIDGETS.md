@@ -141,11 +141,11 @@ Utilise l'API GitHub avec le compte GitHub de l'utilisateur, relié par OAuth (p
 
 | Paramètre | Type | Défaut | Limites | Description |
 |---|---|---|---|---|
-| `limit` | integer | `10` | 1 à 50 | Nombre maximal de notifications |
+| `limit` | integer | `8` | 1 à 8 | Nombre maximal de notifications |
 
 **Données renvoyées :** nombre de notifications et, pour chacune, titre, type (pull request, issue, release…), raison (mention, revue demandée…), dépôt, lien vers la page GitHub et date.
 
-**Dans l'interface :** le mode « Notifications » propose un curseur de 1 à 50 (50 par défaut). Le compteur affiche « N+ » quand le nombre de notifications atteint la limite choisie ; la liste en montre jusqu'à 4 (post-it moyen) ou 8 (grand).
+**Dans l'interface :** le mode « Notifications » propose un curseur de 1 à 8 (8 par défaut). Le compteur affiche « N+ » quand le nombre de notifications atteint la limite choisie ; la liste en montre jusqu'à 4 (post-it moyen) ou 8 (grand).
 
 **Erreurs GitHub :** compte non relié ou autorisation expirée (le post-it propose de se reconnecter), dépôt ou utilisateur introuvable, limite de requêtes atteinte.
 
