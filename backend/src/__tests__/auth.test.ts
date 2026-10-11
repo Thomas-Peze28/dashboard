@@ -14,6 +14,7 @@ describe('Auth & User Integration Tests', () => {
   let jwtToken = '';
 
   afterAll(async () => {
+    // Clean up the test user from the database
     await prisma.user.deleteMany({
       where: { email: testUser.email },
     });
@@ -39,6 +40,7 @@ describe('Auth & User Integration Tests', () => {
       expect(res.body.user).toHaveProperty('id');
       expect(res.body.user.email).toBe(testUser.email);
 
+      // Retrieve the token generated in the database for the confirmation test
       const user = await prisma.user.findUnique({
         where: { email: testUser.email },
       });

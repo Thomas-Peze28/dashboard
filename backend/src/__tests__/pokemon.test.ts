@@ -107,12 +107,14 @@ describe('Pokémon widgets Integration Tests', () => {
             .set('Authorization', `Bearer ${token}`);
 
         expect(res.status).toBe(200);
+        // La carte au nom exact et illustrée est préférée à « Dracaufeu GX », pourtant en tête des résultats.
         expect(res.body.data).toMatchObject({
             id: 'base1-4',
             name: 'Dracaufeu',
             image: 'https://assets.tcgdex.net/fr/base/base1/4/high.webp',
             hp: 120,
         });
+        // Un second appel récupère les détails de la carte trouvée.
         expect(fetchMock).toHaveBeenCalledTimes(2);
         expect(String(fetchMock.mock.calls[1]?.[0])).toBe('https://api.tcgdex.net/v2/fr/cards/base1-4');
 
